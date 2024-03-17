@@ -34,15 +34,17 @@ impl Queue {
         loop {
             let mut tx = self.connection.as_ref().unwrap().begin().await.unwrap();
 
-            let mut job: Option(Job) = self.fetch_candidate_job(&mut tx).await;
+            let job: Option<Job> = self.fetch_candidate_job(&mut tx).await;
 
-            if let Err(_) = job {
+            if job.is_none() {
                 println!("No jobs found, retrying in 2 secs");
                 sleep(Duration::from_secs(2)).await;
+                continue;
             }
+            let mut job: Job = job.unwrap();
 
             job.set_status_as_running();
-            self.mark_job_as_running(&job);
+            self.mark_job_as_running(&job).await;
 
             tx.commit().await.unwrap();
 
@@ -50,15 +52,15 @@ impl Queue {
 
             if result.is_err() {
                 job.set_status_as_pending();
-                self.mark_job_as_pending(&job);
+                self.mark_job_as_pending(&job).await;
                 continue;
             }
 
             job.set_status_as_completed();
-            self.mark_job_as_completed(&job);
+            self.mark_job_as_completed(&job).await;
         }
     }
-    async fn fetch_candidate_job(&self, tx: &mut Transaction<'_, Postgres>) -> Option(Job) {
+    async fn fetch_candidate_job(&self, tx: &mut Transaction<'_, Postgres>) -> Option<Job> {
         let result: Result<Job, _> =
             sqlx::query_as::<_, Job>("SELECT id, payload FROM jobs WHERE status = 'pending'")
                 .fetch_one(&mut **tx)
@@ -71,13 +73,13 @@ impl Queue {
         return Some(result.unwrap());
     }
     async fn mark_job_as_pending(&self, job: &Job) {
-        self.mark_job_as_status(job, JobStatus::Pending);
+        self.mark_job_as_status(job, JobStatus::Pending).await;
     }
     async fn mark_job_as_running(&self, job: &Job) {
-        self.mark_job_as_status(job, JobStatus::Running);
+        self.mark_job_as_status(job, JobStatus::Running).await;
     }
     async fn mark_job_as_completed(&self, job: &Job) {
-        self.mark_job_as_status(job, JobStatus::Completed);
+        self.mark_job_as_status(job, JobStatus::Completed).await;
     }
     async fn mark_job_as_status(&self, job: &Job, job_status: JobStatus) {
         sqlx::query("UPDATE jobs set status='pending' WHERE id = ?")
