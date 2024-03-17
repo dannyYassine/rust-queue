@@ -58,7 +58,7 @@ impl Queue {
             self.mark_job_as_completed(&job);
         }
     }
-    async fn fetch_candidate_job(&self, tx: &mut Transaction<'_, Postgres>) -> Some(Job) {
+    async fn fetch_candidate_job(&self, tx: &mut Transaction<'_, Postgres>) -> Option(Job) {
         let result: Result<Job, _> =
             sqlx::query_as::<_, Job>("SELECT id, payload FROM jobs WHERE status = 'pending'")
                 .fetch_one(&mut **tx)
