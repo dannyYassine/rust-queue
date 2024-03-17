@@ -68,7 +68,7 @@ impl Queue {
             return None;
         }
 
-        return Ok(result.unwrap());
+        return Some(result.unwrap());
     }
     async fn mark_job_as_pending(&self, job: &Job) {
         self.mark_job_as_status(job, JobStatus::Pending);
