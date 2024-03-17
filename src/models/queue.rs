@@ -65,7 +65,7 @@ impl Queue {
                 .await;
 
         if result.is_err() {
-            return Error::other("Not found");
+            return None;
         }
 
         return Ok(result.unwrap());
