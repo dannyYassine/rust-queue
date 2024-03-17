@@ -34,7 +34,7 @@ impl Queue {
         loop {
             let mut tx = self.connection.as_ref().unwrap().begin().await.unwrap();
 
-            let mut job: Some(Job) = self.fetch_candidate_job(&mut tx).await;
+            let mut job: Option(Job) = self.fetch_candidate_job(&mut tx).await;
 
             if let Err(_) = job {
                 println!("No jobs found, retrying in 2 secs");
