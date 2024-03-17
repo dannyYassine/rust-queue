@@ -1,5 +1,5 @@
 mod models;
-use dotenv::dotenv;
+use dotenvy::dotenv;
 use models::queue::Queue;
 
 #[tokio::main]

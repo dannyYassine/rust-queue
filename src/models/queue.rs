@@ -30,7 +30,7 @@ impl Queue {
         println!("Processing jobs from the [default] queue.");
 
         loop {
-            let tx = self.connection.unwrap().begin().await.unwrap();
+            let tx = self.connection.as_ref().unwrap().begin().await.unwrap();
 
             let mut job: Job = self.fetch_candidate_job(&tx).await;
 
@@ -52,10 +52,13 @@ impl Queue {
         }
     }
     async fn fetch_candidate_job(&self, tx: &Transaction<'_, Postgres>) -> Job {
-        let job: Job = sqlx::query!("SELECT id, payload FROM jobs WHERE status = 'pending'")
-            .fetch_one(&tx)
-            .await
-            .unwrap();
+        let job: Job = sqlx::query_as!(Job, 
+            "SELECT id, payload FROM jobs WHERE status = $1"
+        )
+        .bind(JobStatus::Pending)
+        .fetch_one(&tx)
+        .await
+        .unwrap();
 
         return job;
     }
@@ -71,7 +74,7 @@ impl Queue {
     async fn mark_job_as_status(&self, job: &Job, job_status: JobStatus) {
         sqlx::query!(
             "UPDATE jobs set status='$1' WHERE id = $2",
-            job_status,
+            job.status,
             job.id
         )
         .execute(&self.connection.unwrap())
@@ -81,9 +84,7 @@ impl Queue {
     async fn execute_job(&self, job: &Job) -> Result<bool, Error> {
         println!("Processing job {} started", job.id);
 
-        // execute job
-        let connection = self.connection.unwrap().clone();
-        let handle = tokio::spawn(move || self.process_job(&connection, job));
+        let handle = tokio::spawn(process_job());
         handle.await?;
 
         let failed = false;
@@ -95,7 +96,8 @@ impl Queue {
         println!("Processing job {} completed", job.id);
         return Ok(true);
     }
-    async fn process_job(&self, connection: &PgPool, job: &Job) {
-        sleep(Duration::from_secs(2)).await;
-    }
+}
+
+async fn process_job() {
+    sleep(Duration::from_secs(2)).await;
 }

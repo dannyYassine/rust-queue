@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Debug, sqlx::FromRow)]
 pub struct Job {
     pub id: i32,
     pub payload: String,
