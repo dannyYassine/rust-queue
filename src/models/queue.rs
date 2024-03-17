@@ -83,7 +83,7 @@ impl Queue {
 
         // execute job
         let connection = self.connection.unwrap().clone();
-        let handle = tokio::spawn(||self.process_job(&connection, job));
+        let handle = tokio::spawn(move || self.process_job(&connection, job));
         handle.await?;
 
         let failed = false;
