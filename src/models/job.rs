@@ -9,22 +9,22 @@ impl Job {
     pub fn set_status_as_pending(&mut self) -> &Self {
         self.status = JobStatus::Pending.to_string();
 
-        return &self;
+        return self;
     }
     pub fn set_status_as_running(&mut self) -> &Self {
         self.status = JobStatus::Running.to_string();
 
-        return &self;
+        return self;
     }
     pub fn set_status_as_completed(&mut self) -> &Self {
         self.status = JobStatus::Completed.to_string();
 
-        return &self;
+        return self;
     }
     pub fn set_status(&mut self, job_status: JobStatus) -> &Self {
         self.status = job_status.to_string();
 
-        return &self;
+        return self;
     }
 }
 
