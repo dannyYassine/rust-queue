@@ -1,0 +1,36 @@
+version: '3'
+
+networks:
+  rust-queue:
+    driver: bridge
+
+services:
+  postgres:
+    container_name: rust-queue-postgres
+    image: postgres:14.1-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - '5432:5432'
+    restart: unless-stopped
+    tty: true
+    networks:
+      - rust-queue
+
+  worker:
+    container_name: rust-queue-worker
+    build:
+      context: .
+      dockerfile: dev-env/worker.dockerfile
+    command: >
+      sh -c "tail -f /dev/null"
+    volumes:
+      - .:/usr/src/worker
+    networks:
+      - rust-queue
+    depends_on:
+      - postgres
+    links:
+      - postgres

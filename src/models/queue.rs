@@ -48,7 +48,7 @@ impl Queue {
             }
 
             job.set_status_as_completed();
-            self.mark_job_as_completed(&job)
+            self.mark_job_as_completed(&job);
         }
     }
     async fn fetch_candidate_job(&self, tx: &Transaction<'_, Postgres>) -> Job {
@@ -82,7 +82,9 @@ impl Queue {
         println!("Processing job {} started", job.id);
 
         // execute job
-        sleep(Duration::from_secs(2)).await;
+        let connection = self.connection.unwrap().clone();
+        let handle = tokio::spawn(||self.process_job(&connection, job));
+        handle.await?;
 
         let failed = false;
         if failed {
@@ -92,5 +94,8 @@ impl Queue {
 
         println!("Processing job {} completed", job.id);
         return Ok(true);
+    }
+    async fn process_job(&self, connection: &PgPool, job: &Job) {
+        sleep(Duration::from_secs(2)).await;
     }
 }
