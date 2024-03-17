@@ -34,7 +34,12 @@ impl Queue {
         loop {
             let mut tx = self.connection.as_ref().unwrap().begin().await.unwrap();
 
-            let mut job: Job = self.fetch_candidate_job(&mut tx).await;
+            let mut job: Some(Job) = self.fetch_candidate_job(&mut tx).await;
+
+            if let Err(_) = job {
+                println!("No jobs found, retrying in 2 secs");
+                sleep(Duration::from_secs(2)).await;
+            }
 
             job.set_status_as_running();
             self.mark_job_as_running(&job);
@@ -53,14 +58,17 @@ impl Queue {
             self.mark_job_as_completed(&job);
         }
     }
-    async fn fetch_candidate_job(&self, tx: &mut Transaction<'_, Postgres>) -> Job {
-        let job: Job =
+    async fn fetch_candidate_job(&self, tx: &mut Transaction<'_, Postgres>) -> Some(Job) {
+        let result: Result<Job, _> =
             sqlx::query_as::<_, Job>("SELECT id, payload FROM jobs WHERE status = 'pending'")
                 .fetch_one(&mut **tx)
-                .await
-                .unwrap();
+                .await;
 
-        return job;
+        if result.is_err() {
+            return Error::other("Not found");
+        }
+
+        return Ok(result.unwrap());
     }
     async fn mark_job_as_pending(&self, job: &Job) {
         self.mark_job_as_status(job, JobStatus::Pending);
