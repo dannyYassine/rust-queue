@@ -28,7 +28,15 @@ mod tests {
         .execute(&connection)
         .await;
 
-        let mut queue: Queue = Queue::new_do_only_one_job(true);
+        let results: Result<Vec<Job>, _> = sqlx::query_as::<_, Job>(
+            "SELECT id, payload, status FROM jobs where status = 'pending'",
+        )
+        .fetch_all(&connection)
+        .await;
+
+        assert_eq!(results.unwrap().len(), 1);
+
+        let mut queue: Queue = Queue::new_with_job_limit(1);
         queue.listen().await;
 
         let results: Result<Vec<Job>, _> = sqlx::query_as::<_, Job>(

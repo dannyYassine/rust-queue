@@ -11,23 +11,24 @@ use tokio::time::{sleep, Duration};
 
 pub struct Queue {
     connection: Option<PgPool>,
-    do_only_one_job: bool,
+    job_limit: Option<i32>,
 }
 
 impl Queue {
     pub fn new() -> Self {
         return Queue {
             connection: None,
-            do_only_one_job: false
+            job_limit: None,
         };
     }
-    pub fn new_do_only_one_job(do_only_one_job: bool) -> Self {
+    pub fn new_with_job_limit(job_limit: i32) -> Self {
         return Queue {
             connection: None,
-            do_only_one_job,
+            job_limit: Some(job_limit),
         };
     }
     pub async fn listen(&mut self) {
+        let mut count: i32 = 0;
         self.bootstrap().await;
 
         println!("Processing jobs from the [default] queue.");
@@ -46,7 +47,6 @@ impl Queue {
 
             job.set_status_as_running();
             self.mark_job_as_running(&job).await;
-
             tx.commit().await.unwrap();
 
             let result: Result<_, _> = self.execute_job(&job).await;
@@ -57,11 +57,17 @@ impl Queue {
                 continue;
             }
 
+            count += 1;
             job.set_status_as_completed();
             self.mark_job_as_completed(&job).await;
 
-            if self.do_only_one_job {
-                break;
+            match self.job_limit {
+                Some(val) => {
+                    if count >= val {
+                        break;
+                    }
+                }
+                None => continue,
             }
         }
     }
