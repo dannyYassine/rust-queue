@@ -21,11 +21,6 @@ impl Job {
 
         return self;
     }
-    pub fn set_status(&mut self, job_status: JobStatus) -> &Self {
-        self.status = job_status.to_string();
-
-        return self;
-    }
 }
 
 #[derive(Debug)]

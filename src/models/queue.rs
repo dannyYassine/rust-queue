@@ -37,8 +37,8 @@ impl Queue {
             let job: Option<Job> = self.fetch_candidate_job(&mut tx).await;
 
             if job.is_none() {
-                println!("No jobs found, retrying in 2 secs");
-                sleep(Duration::from_secs(2)).await;
+                println!("No jobs found, retrying in 1 second");
+                sleep(Duration::from_secs(1)).await;
                 continue;
             }
             let mut job: Job = job.unwrap();
@@ -61,12 +61,14 @@ impl Queue {
         }
     }
     async fn fetch_candidate_job(&self, tx: &mut Transaction<'_, Postgres>) -> Option<Job> {
-        let result: Result<Job, _> =
-            sqlx::query_as::<_, Job>("SELECT id, payload FROM jobs WHERE status = 'pending'")
-                .fetch_one(&mut **tx)
-                .await;
+        let result: Result<Job, _> = sqlx::query_as::<_, Job>(
+            "SELECT id, payload, status FROM jobs where status = 'pending'",
+        )
+        .fetch_one(&mut **tx)
+        .await;
 
         if result.is_err() {
+            println!("{:?}", result);
             return None;
         }
 
@@ -82,12 +84,15 @@ impl Queue {
         self.mark_job_as_status(job, JobStatus::Completed).await;
     }
     async fn mark_job_as_status(&self, job: &Job, job_status: JobStatus) {
-        sqlx::query("UPDATE jobs set status='pending' WHERE id = ?")
+        let result = sqlx::query("UPDATE jobs set status=$1 WHERE id = $2")
             .bind(job_status.to_string())
             .bind(job.id)
             .execute(self.connection.as_ref().unwrap())
-            .await
-            .unwrap();
+            .await;
+
+        if result.is_err() {
+            println!("{:?}", result);
+        }
     }
     async fn execute_job(&self, job: &Job) -> Result<bool, Error> {
         println!("Processing job {} started", job.id);
@@ -100,8 +105,8 @@ impl Queue {
             println!("Processing job {} failed", job.id);
             return Err(Error::other("Job failed"));
         }
-
         println!("Processing job {} completed", job.id);
+
         return Ok(true);
     }
 }
