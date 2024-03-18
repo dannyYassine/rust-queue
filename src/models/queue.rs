@@ -1,7 +1,8 @@
 #![allow(unsafe_code)]
 
-use super::job::{Job, JobStatus};
+use crate::models::job::{Job, JobStatus};
 use sqlx::{PgPool, Postgres, Transaction};
+use std::sync::mpsc::{self, Sender};
 use std::{
     env::{self, VarError},
     io::Error,
@@ -97,11 +98,23 @@ impl Queue {
     async fn execute_job(&self, job: &Job) -> Result<bool, Error> {
         println!("Processing job {} started", job.id);
 
-        let handle = tokio::spawn(process_job());
+        let (sender, receiver) = mpsc::channel::<bool>();
+        let job_to_be_processed: Job = job.clone();
+        let handle = tokio::spawn(process_job(sender, job_to_be_processed));
         handle.await?;
 
-        let failed = false;
-        if failed {
+        let result: Result<bool, _> = receiver.recv();
+
+        if result.is_err() {
+            println!("Processing job {} failed", job.id);
+            if let Err(error) = result {
+                println!("with error:: {}", error);
+            }
+            return Err(Error::other("Job failed"));
+        }
+
+        let failed: bool = result.unwrap();
+        if !failed {
             println!("Processing job {} failed", job.id);
             return Err(Error::other("Job failed"));
         }
@@ -111,6 +124,24 @@ impl Queue {
     }
 }
 
-async fn process_job() {
+async fn process_job(sender: Sender<bool>, job: Job) {
     sleep(Duration::from_secs(2)).await;
+
+    let handle_job = || -> Result<(), Error> {
+        job.handle();
+        return Ok(());
+    };
+
+    let result: Result<(), mpsc::SendError<bool>>;
+    if let Err(_) = handle_job() {
+        result = sender.send(false);
+    } else {
+        result = sender.send(true);
+    }
+
+    if result.is_err() {
+        return println!("{:?}", result);
+    }
+
+    result.unwrap();
 }

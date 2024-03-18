@@ -1,4 +1,4 @@
-#[derive(Debug, sqlx::FromRow)]
+#[derive(Debug, Clone, sqlx::FromRow)]
 pub struct Job {
     pub id: i32,
     pub payload: String,
@@ -6,6 +6,9 @@ pub struct Job {
 }
 
 impl Job {
+    pub fn handle(&self) {
+        //
+    }
     pub fn set_status_as_pending(&mut self) -> &Self {
         self.status = JobStatus::Pending.to_string();
 

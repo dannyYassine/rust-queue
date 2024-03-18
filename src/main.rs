@@ -1,6 +1,6 @@
 mod models;
+use crate::models::queue::Queue;
 use dotenvy::dotenv;
-use models::queue::Queue;
 
 #[tokio::main]
 async fn main() {
