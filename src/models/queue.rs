@@ -17,19 +17,9 @@ impl Queue {
     pub fn new() -> Self {
         return Queue { connection: None };
     }
-    pub async fn bootstrap(&mut self) -> &Self {
-        let result: Result<String, VarError> = env::var("DATABASE_URL");
+    pub async fn listen(&mut self) {
+        self.bootstrap().await;
 
-        if result.is_err() {
-            panic!("Missing DATABASE_URL");
-        }
-
-        let pool = sqlx::PgPool::connect(&result.unwrap()).await.unwrap();
-        self.connection = Some(pool);
-
-        return self;
-    }
-    pub async fn listen(&self) {
         println!("Processing jobs from the [default] queue.");
 
         loop {
@@ -60,6 +50,15 @@ impl Queue {
             job.set_status_as_completed();
             self.mark_job_as_completed(&job).await;
         }
+    }
+    async fn bootstrap(&mut self) {
+        let result: Result<String, VarError> = env::var("DATABASE_URL");
+
+        if result.is_err() {
+            panic!("Missing DATABASE_URL");
+        }
+
+        self.connection = Some(sqlx::PgPool::connect(&result.unwrap()).await.unwrap());
     }
     async fn fetch_candidate_job(&self, tx: &mut Transaction<'_, Postgres>) -> Option<Job> {
         let result: Result<Job, _> = sqlx::query_as::<_, Job>(

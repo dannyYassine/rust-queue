@@ -7,5 +7,5 @@ async fn main() {
     dotenv().ok();
 
     let mut queue: Queue = Queue::new();
-    queue.bootstrap().await.listen().await;
+    queue.listen().await;
 }
