@@ -11,11 +11,21 @@ use tokio::time::{sleep, Duration};
 
 pub struct Queue {
     connection: Option<PgPool>,
+    do_only_one_job: bool,
 }
 
 impl Queue {
     pub fn new() -> Self {
-        return Queue { connection: None };
+        return Queue {
+            connection: None,
+            do_only_one_job: false
+        };
+    }
+    pub fn new_do_only_one_job(do_only_one_job: bool) -> Self {
+        return Queue {
+            connection: None,
+            do_only_one_job,
+        };
     }
     pub async fn listen(&mut self) {
         self.bootstrap().await;
@@ -49,6 +59,10 @@ impl Queue {
 
             job.set_status_as_completed();
             self.mark_job_as_completed(&job).await;
+
+            if self.do_only_one_job {
+                break;
+            }
         }
     }
     async fn bootstrap(&mut self) {

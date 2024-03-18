@@ -1,5 +1,4 @@
-mod models;
-use crate::models::queue::Queue;
+use rust_queue::models::queue::Queue;
 use dotenvy::dotenv;
 
 #[tokio::main]
