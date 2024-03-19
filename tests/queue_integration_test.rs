@@ -48,8 +48,6 @@ mod tests {
 
         assert_eq!(results.unwrap().len(), 0);
 
-        sqlx::query("DELETE from jobs;")
-            .execute(&connection)
-            .await;
+        let _ = sqlx::query("DELETE from jobs;").execute(&connection).await;
     }
 }
