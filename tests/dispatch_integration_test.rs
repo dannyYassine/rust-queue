@@ -36,5 +36,9 @@ mod tests {
         assert_eq!(job.payload, job_in_database.payload);
         assert_eq!(job.model_type, job_in_database.model_type);
         assert_eq!(job.status, job_in_database.status);
+
+        sqlx::query("DELETE from jobs;".as_str())
+            .execute(&connection)
+            .await;
     }
 }

@@ -47,5 +47,9 @@ mod tests {
         .await;
 
         assert_eq!(results.unwrap().len(), 0);
+
+        sqlx::query("DELETE from jobs;".as_str())
+            .execute(&connection)
+            .await;
     }
 }
