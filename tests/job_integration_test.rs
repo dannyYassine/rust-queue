@@ -8,6 +8,7 @@ mod tests {
             id: 1,
             payload: "".to_string(),
             status: "".to_string(),
+            model_type: "".to_string(),
         };
 
         job.set_status_as_pending();
@@ -21,6 +22,7 @@ mod tests {
             id: 1,
             payload: "".to_string(),
             status: "".to_string(),
+            model_type: "".to_string(),
         };
 
         job.set_status_as_running();
@@ -34,6 +36,7 @@ mod tests {
             id: 1,
             payload: "".to_string(),
             status: "".to_string(),
+            model_type: "".to_string(),
         };
 
         job.set_status_as_completed();

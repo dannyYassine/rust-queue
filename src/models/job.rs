@@ -3,6 +3,7 @@ pub struct Job {
     pub id: i32,
     pub payload: String,
     pub status: String,
+    pub model_type: String,
 }
 
 impl Job {

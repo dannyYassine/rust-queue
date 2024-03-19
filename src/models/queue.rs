@@ -82,7 +82,7 @@ impl Queue {
     }
     async fn fetch_candidate_job(&self, tx: &mut Transaction<'_, Postgres>) -> Option<Job> {
         let result: Result<Job, _> = sqlx::query_as::<_, Job>(
-            "SELECT id, payload, status FROM jobs where status = 'pending'",
+            "SELECT id, payload, status, model_type FROM jobs where status = 'pending'",
         )
         .fetch_one(&mut **tx)
         .await;

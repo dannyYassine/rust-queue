@@ -14,14 +14,15 @@ mod tests {
             id: 1,
             payload: "{}".to_string(),
             status: JobStatus::Pending.to_string(),
+            model_type: "rust_queue::models::job::Job".to_string(),
         };
         let connection = sqlx::PgPool::connect(&env::var("DATABASE_URL").unwrap())
             .await
             .unwrap();
         let _ = sqlx::query(
             format!(
-                "INSERT INTO jobs (payload, status) VALUES ('{}', '{}');",
-                job.payload, job.status
+                "INSERT INTO jobs (payload, status, model_type) VALUES ('{}', '{}', '{}');",
+                job.payload, job.status, job.model_type
             )
             .as_str(),
         )
@@ -29,7 +30,7 @@ mod tests {
         .await;
 
         let results: Result<Vec<Job>, _> = sqlx::query_as::<_, Job>(
-            "SELECT id, payload, status FROM jobs where status = 'pending'",
+            "SELECT id, payload, status, model_type FROM jobs where status = 'pending'",
         )
         .fetch_all(&connection)
         .await;
@@ -40,7 +41,7 @@ mod tests {
         queue.listen().await;
 
         let results: Result<Vec<Job>, _> = sqlx::query_as::<_, Job>(
-            "SELECT id, payload, status FROM jobs where status = 'pending'",
+            "SELECT id, payload, status, model_type FROM jobs where status = 'pending'",
         )
         .fetch_all(&connection)
         .await;
