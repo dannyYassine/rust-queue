@@ -37,7 +37,7 @@ mod tests {
         assert_eq!(job.model_type, job_in_database.model_type);
         assert_eq!(job.status, job_in_database.status);
 
-        sqlx::query("DELETE from jobs;".as_str())
+        let _ = sqlx::query("DELETE from jobs;")
             .execute(&connection)
             .await;
     }
