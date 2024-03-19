@@ -15,7 +15,9 @@ mod tests {
             status: JobStatus::Pending.to_string(),
             model_type: "rust_queue::models::job::Job".to_string(),
         };
+
         dispatch!(job);
+
         let connection = sqlx::PgPool::connect(&env::var("DATABASE_URL").unwrap())
             .await
             .unwrap();
@@ -26,9 +28,10 @@ mod tests {
         .fetch_all(&connection)
         .await;
 
-        assert_eq!(results.unwrap().len(), 1);
+        let jobs = results.unwrap();
+        assert_eq!(jobs.len(), 1);
 
-        let job_in_database = results[0];
+        let job_in_database = jobs.first().unwrap();
 
         assert_eq!(job.payload, job_in_database.payload);
         assert_eq!(job.model_type, job_in_database.model_type);
