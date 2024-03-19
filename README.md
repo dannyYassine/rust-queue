@@ -19,7 +19,8 @@ sudo apt install build-essential -y
 CREATE TABLE jobs (
     id SERIAL PRIMARY KEY,
     payload TEXT NOT NULL,
-    status VARCHAR(20) NOT NULL DEFAULT 'pending'
+    status VARCHAR(20) NOT NULL DEFAULT 'pending',
+    model_type TEXT NOT NULL
 );
 ```
 

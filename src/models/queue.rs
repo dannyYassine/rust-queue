@@ -88,7 +88,6 @@ impl Queue {
         .await;
 
         if result.is_err() {
-            println!("{:?}", result);
             return None;
         }
 
@@ -144,7 +143,7 @@ impl Queue {
 }
 
 async fn process_job(sender: Sender<bool>, job: Job) {
-    sleep(Duration::from_secs(2)).await;
+    sleep(Duration::from_secs(1)).await;
 
     let handle_job = || -> Result<(), Error> {
         job.handle();

@@ -1,3 +1,7 @@
+pub trait CanHandleJob {
+    async fn handle(&self);
+}
+
 #[derive(Debug, Clone, sqlx::FromRow)]
 pub struct Job {
     pub id: i32,
@@ -5,6 +9,12 @@ pub struct Job {
     pub status: String,
     pub model_type: String,
 }
+
+// impl CanHandleJob for Job {
+//     async fn handle(&self) {
+//         //
+//     }
+// }
 
 impl Job {
     pub fn handle(&self) {
