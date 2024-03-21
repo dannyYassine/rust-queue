@@ -9,7 +9,9 @@ async fn main() {
     dotenv().ok();
 
     for _ in 0..5 {
-        let print = PrintToConsoleJob {};
+        let print = PrintToConsoleJob {
+            name: "this is my job".to_string(),
+        };
         println!("Dispatch job");
         dispatch!(print);
     }

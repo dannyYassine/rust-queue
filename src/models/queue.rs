@@ -15,7 +15,7 @@ use super::job::CanHandleJob;
 pub struct Queue {
     connection: Option<PgPool>,
     job_limit: Option<i32>,
-    map: HashMap<String, Box<dyn Fn()>>,
+    map: HashMap<String, Box<dyn Fn(&String)>>,
 }
 
 impl Queue {
@@ -26,12 +26,17 @@ impl Queue {
             map: HashMap::new(),
         };
     }
-    pub fn register<J>(&mut self) -> &mut Self
+    pub fn register<J>(mut self) -> Self
     where
         J: CanHandleJob,
     {
-        self.map
-            .insert(J::NAME.to_owned(), Box::new(|| println!("Job is created")));
+        self.map.insert(
+            J::NAME.to_owned(),
+            Box::new(|json_value: &String| {
+                // let job = Box::new(serde_json::from_str::<J>(json_value).unwrap());
+                println!("{:?}", json_value);
+            }),
+        );
 
         return self;
     }
@@ -59,7 +64,9 @@ impl Queue {
                 continue;
             }
             let mut job: Job = job.unwrap();
-
+            if let Some(func) = self.map.get(job.model_type.as_str()) {
+                func(&job.data);
+            }
             job.set_status_as_running();
             self.mark_job_as_running(&job).await;
             tx.commit().await.unwrap();

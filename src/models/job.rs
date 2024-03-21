@@ -1,4 +1,6 @@
-pub trait CanHandleJob {
+use serde::Serialize;
+
+pub trait CanHandleJob: Serialize + 'static {
     const NAME: &'static str;
     fn handle(&self);
 }
@@ -11,12 +13,6 @@ pub struct Job {
     pub model_type: String,
     pub data: String,
 }
-
-// impl CanHandleJob for Job {
-//     async fn handle(&self) {
-//         //
-//     }
-// }
 
 impl Job {
     pub fn handle(&self) {

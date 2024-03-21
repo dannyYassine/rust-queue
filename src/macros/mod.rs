@@ -11,11 +11,14 @@ macro_rules! dispatch {
         }
         let connection = sqlx::PgPool::connect(&result.unwrap()).await.unwrap();
 
+        let s = type_name_of_val(&$job).to_string();
+        let word = s.split("::").last().unwrap_or_default();
+
         let job: Job = Job {
             id: 1,
             payload: "".to_string(),
             status: "pending".to_string(),
-            model_type: "rust_queue::models::job::Job".to_string(),
+            model_type: word.to_string(),
             data: serde_json::to_string(&$job).unwrap()
         };
 
