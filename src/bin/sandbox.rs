@@ -1,9 +1,14 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::{any::type_name, collections::HashMap};
 
 // Trait for the associated constant `NAME`
 trait JobName: 'static {
-    const NAME: &'static str;
+    fn name() -> String {
+        let s = type_name::<Self>().to_string();
+        let word = s.split("::").last().unwrap_or_default();
+
+        return word.to_owned();
+    }
 }
 
 // Trait for the method `handle`
@@ -12,9 +17,7 @@ trait JobHandle: 'static {
 }
 
 // Implementing trait `JobName` for `MyJob`
-impl JobName for MyJob {
-    const NAME: &'static str = "MyJob";
-}
+impl JobName for MyJob {}
 
 // Implementing trait `JobHandle` for `MyJob`
 impl JobHandle for MyJob {
@@ -42,9 +45,7 @@ struct AnotherJob {
 }
 
 // Implementing trait `JobName` for `MyJob`
-impl JobName for AnotherJob {
-    const NAME: &'static str = "AnotherJob";
-}
+impl JobName for AnotherJob {}
 
 // Implementing trait `JobHandle` for `MyJob`
 impl JobHandle for AnotherJob {
@@ -59,15 +60,15 @@ where
     J: JobName + JobHandle + Serialize + for<'de> Deserialize<'de>,
 {
     map.insert(
-        J::NAME.to_owned(),
+        J::name(),
         Box::new(move |json_value: String| {
             Box::new(serde_json::from_str::<J>(json_value.as_str()).unwrap()) as Box<dyn JobHandle>
         }),
     );
 }
 
-fn get_job(map: &mut JobMap, json: String, model_type: &str) -> Box<dyn JobHandle> {
-    let func = map.get(model_type).unwrap();
+fn get_job(map: &mut JobMap, json: String, model_type: String) -> Box<dyn JobHandle> {
+    let func = map.get(&model_type).unwrap();
 
     return func(json);
 }
@@ -83,13 +84,13 @@ fn main() {
     // saves struct in DB
     let json = serde_json::to_string::<MyJob>(&my_job).unwrap();
     // retrieve job info from DB, using json and model_type
-    let job_to_run = get_job(&mut map, json, MyJob::NAME);
+    let job_to_run = get_job(&mut map, json, MyJob::name());
     job_to_run.handle();
 
     let my_job = AnotherJob { value: 1 };
     // saves struct in DB
     let json = serde_json::to_string::<AnotherJob>(&my_job).unwrap();
     // retrieve job info from DB, using json and model_type
-    let job_to_run = get_job(&mut map, json, AnotherJob::NAME);
+    let job_to_run = get_job(&mut map, json, AnotherJob::name());
     job_to_run.handle();
 }
