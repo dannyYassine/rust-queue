@@ -15,6 +15,7 @@ mod tests {
             payload: "{}".to_string(),
             status: JobStatus::Pending.to_string(),
             model_type: "rust_queue::models::job::Job".to_string(),
+            data: "".to_string(),
         };
         let connection = sqlx::PgPool::connect(&env::var("DATABASE_URL").unwrap())
             .await

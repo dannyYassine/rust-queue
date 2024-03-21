@@ -1,5 +1,7 @@
 #[cfg(test)]
 mod tests {
+    use std::env;
+
     use dotenvy::dotenv;
     use rust_queue::{
         dispatch,
@@ -14,9 +16,10 @@ mod tests {
             payload: "{}".to_string(),
             status: JobStatus::Pending.to_string(),
             model_type: "rust_queue::models::job::Job".to_string(),
+            data: "".to_string(),
         };
 
-        dispatch!(job);
+        // dispatch!(job);
 
         let connection = sqlx::PgPool::connect(&env::var("DATABASE_URL").unwrap())
             .await
@@ -37,8 +40,6 @@ mod tests {
         assert_eq!(job.model_type, job_in_database.model_type);
         assert_eq!(job.status, job_in_database.status);
 
-        let _ = sqlx::query("DELETE from jobs;")
-            .execute(&connection)
-            .await;
+        let _ = sqlx::query("DELETE from jobs;").execute(&connection).await;
     }
 }

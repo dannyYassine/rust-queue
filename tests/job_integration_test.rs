@@ -9,6 +9,7 @@ mod tests {
             payload: "".to_string(),
             status: "".to_string(),
             model_type: "".to_string(),
+            data: "".to_string(),
         };
 
         job.set_status_as_pending();
@@ -23,6 +24,7 @@ mod tests {
             payload: "".to_string(),
             status: "".to_string(),
             model_type: "".to_string(),
+            data: "".to_string(),
         };
 
         job.set_status_as_running();
@@ -37,6 +39,7 @@ mod tests {
             payload: "".to_string(),
             status: "".to_string(),
             model_type: "".to_string(),
+            data: "".to_string(),
         };
 
         job.set_status_as_completed();

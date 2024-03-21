@@ -1,5 +1,6 @@
 pub trait CanHandleJob {
-    async fn handle(&self);
+    const NAME: &'static str;
+    fn handle(&self);
 }
 
 #[derive(Debug, Clone, sqlx::FromRow)]
@@ -8,6 +9,7 @@ pub struct Job {
     pub payload: String,
     pub status: String,
     pub model_type: String,
+    pub data: String,
 }
 
 // impl CanHandleJob for Job {

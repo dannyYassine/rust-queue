@@ -2,6 +2,7 @@
 
 use crate::models::job::{Job, JobStatus};
 use sqlx::{PgPool, Postgres, Transaction};
+use std::collections::HashMap;
 use std::sync::mpsc::{self, Sender};
 use std::{
     env::{self, VarError},
@@ -9,9 +10,12 @@ use std::{
 };
 use tokio::time::{sleep, Duration};
 
+use super::job::CanHandleJob;
+
 pub struct Queue {
     connection: Option<PgPool>,
     job_limit: Option<i32>,
+    map: HashMap<String, Box<dyn Fn()>>,
 }
 
 impl Queue {
@@ -19,12 +23,23 @@ impl Queue {
         return Queue {
             connection: None,
             job_limit: None,
+            map: HashMap::new(),
         };
+    }
+    pub fn register<J>(&mut self) -> &mut Self
+    where
+        J: CanHandleJob,
+    {
+        self.map
+            .insert(J::NAME.to_owned(), Box::new(|| println!("Job is created")));
+
+        return self;
     }
     pub fn new_with_job_limit(job_limit: i32) -> Self {
         return Queue {
             connection: None,
             job_limit: Some(job_limit),
+            map: HashMap::new(),
         };
     }
     pub async fn listen(&mut self) {
@@ -82,7 +97,7 @@ impl Queue {
     }
     async fn fetch_candidate_job(&self, tx: &mut Transaction<'_, Postgres>) -> Option<Job> {
         let result: Result<Job, _> = sqlx::query_as::<_, Job>(
-            "SELECT id, payload, status, model_type FROM jobs where status = 'pending'",
+            "SELECT id, payload, status, model_type, data FROM jobs where status = 'pending'",
         )
         .fetch_one(&mut **tx)
         .await;
