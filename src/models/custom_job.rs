@@ -14,3 +14,16 @@ impl CanHandleJob for PrintToConsoleJob {
         println!("Running PrintToConsoleJob");
     }
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MultipleValueJob {
+    pub value: i32,
+}
+
+impl CanHandleJob for MultipleValueJob {
+    const NAME: &'static str = "MultipleValueJob";
+
+    fn handle(&self) {
+        println!("Multiple value: {}", self.value * self.value);
+    }
+}
