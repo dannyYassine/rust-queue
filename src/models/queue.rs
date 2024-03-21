@@ -1,6 +1,7 @@
 #![allow(unsafe_code)]
 
 use crate::models::job::{Job, JobStatus};
+use serde::{Deserialize, Serialize};
 use sqlx::{PgPool, Postgres, Transaction};
 use std::collections::HashMap;
 use std::sync::mpsc::{self, Sender};
@@ -10,12 +11,18 @@ use std::{
 };
 use tokio::time::{sleep, Duration};
 
-use super::job::CanHandleJob;
+use super::job::{JobHandle, JobName};
+
+// Type alias for the closure used in the JobMap
+type JobClosure = Box<dyn Fn(String) -> Box<dyn JobHandle>>;
+
+// HashMap for the JobMap
+type JobMap = HashMap<String, JobClosure>;
 
 pub struct Queue {
     connection: Option<PgPool>,
     job_limit: Option<i32>,
-    map: HashMap<String, Box<dyn Fn(&String)>>,
+    map: JobMap,
 }
 
 impl Queue {
@@ -28,13 +35,13 @@ impl Queue {
     }
     pub fn register<J>(mut self) -> Self
     where
-        J: CanHandleJob,
+        J: JobName + JobHandle + Serialize + for<'de> Deserialize<'de>,
     {
         self.map.insert(
-            J::NAME.to_owned(),
-            Box::new(|json_value: &String| {
-                // let job = Box::new(serde_json::from_str::<J>(json_value).unwrap());
-                println!("{:?}", json_value);
+            J::name(),
+            Box::new(move |json_value: String| {
+                Box::new(serde_json::from_str::<J>(json_value.as_str()).unwrap())
+                    as Box<dyn JobHandle>
             }),
         );
 
@@ -64,8 +71,8 @@ impl Queue {
                 continue;
             }
             let mut job: Job = job.unwrap();
-            if let Some(func) = self.map.get(job.model_type.as_str()) {
-                func(&job.data);
+            if let Some(job_handle) = self.map.get(job.model_type.as_str()) {
+                job_handle(job.data.to_owned()).handle();
             }
             job.set_status_as_running();
             self.mark_job_as_running(&job).await;

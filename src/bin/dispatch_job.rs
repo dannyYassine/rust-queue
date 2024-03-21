@@ -1,11 +1,16 @@
 use dotenvy::dotenv;
-use rust_queue::{
-    dispatch,
-    models::{
-        custom_job::{MultipleValueJob, PrintToConsoleJob},
-        job::Job,
-    },
-};
+use rust_queue::{dispatch, models::job::Job};
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Serialize, Deserialize)]
+struct PrintToConsoleJob {
+    name: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct MultipleValueJob {
+    value: i32,
+}
 
 #[tokio::main]
 async fn main() {
