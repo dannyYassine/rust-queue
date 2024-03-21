@@ -165,8 +165,6 @@ impl Queue {
 }
 
 async fn process_job(sender: Sender<bool>, job: Job) {
-    sleep(Duration::from_secs(1)).await;
-
     let handle_job = || -> Result<(), Error> {
         job.handle();
         return Ok(());

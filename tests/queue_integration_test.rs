@@ -10,6 +10,11 @@ mod tests {
     #[tokio::test]
     async fn it_should_handle_job_in_database() {
         dotenv().ok();
+        let connection = sqlx::PgPool::connect(&env::var("DATABASE_URL").unwrap())
+            .await
+            .unwrap();
+        let _ = sqlx::query("DELETE from jobs;").execute(&connection).await;
+
         let job: Job = Job {
             id: 1,
             payload: "{}".to_string(),
@@ -17,13 +22,11 @@ mod tests {
             model_type: "rust_queue::models::job::Job".to_string(),
             data: "".to_string(),
         };
-        let connection = sqlx::PgPool::connect(&env::var("DATABASE_URL").unwrap())
-            .await
-            .unwrap();
+
         let _ = sqlx::query(
             format!(
-                "INSERT INTO jobs (payload, status, model_type) VALUES ('{}', '{}', '{}');",
-                job.payload, job.status, job.model_type
+                "INSERT INTO jobs (payload, status, model_type, data) VALUES ('{}', '{}', '{}', '{}');",
+                job.payload, job.status, job.model_type, job.data
             )
             .as_str(),
         )
@@ -31,7 +34,7 @@ mod tests {
         .await;
 
         let results: Result<Vec<Job>, _> = sqlx::query_as::<_, Job>(
-            "SELECT id, payload, status, model_type FROM jobs where status = 'pending'",
+            "SELECT id, payload, status, model_type, data FROM jobs where status = 'pending'",
         )
         .fetch_all(&connection)
         .await;
@@ -42,7 +45,7 @@ mod tests {
         queue.listen().await;
 
         let results: Result<Vec<Job>, _> = sqlx::query_as::<_, Job>(
-            "SELECT id, payload, status, model_type FROM jobs where status = 'pending'",
+            "SELECT id, payload, status, model_type, data FROM jobs where status = 'pending'",
         )
         .fetch_all(&connection)
         .await;
