@@ -28,6 +28,15 @@ impl Job {
     pub fn handle(&self) {
         //
     }
+    pub fn new(payload: String, status: String, model_type: String, data: String) -> Self {
+        Job {
+            id: 0,
+            payload,
+            status,
+            model_type,
+            data,
+        }
+    }
     pub fn set_status_as_pending(&mut self) -> &Self {
         self.status = JobStatus::Pending.to_string();
 

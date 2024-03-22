@@ -1,38 +1,22 @@
 #[macro_export]
 macro_rules! dispatch {
     ($job:expr) => {
+        use rust_queue::repositories::job_repository::JobRepository;
         use std::any::type_name_of_val;
         use std::env::{self, VarError};
 
-        let result: Result<String, VarError> = env::var("DATABASE_URL");
-
-        if result.is_err() {
-            panic!("Missing DATABASE_URL");
-        }
-        let connection = sqlx::PgPool::connect(&result.unwrap()).await.unwrap();
+        let job_repository = JobRepository::new().await;
 
         let s = type_name_of_val(&$job).to_string();
         let word = s.split("::").last().unwrap_or_default();
 
-        let job: Job = Job {
-            id: 1,
-            payload: "".to_string(),
-            status: "pending".to_string(),
-            model_type: word.to_string(),
-            data: serde_json::to_string(&$job).unwrap()
-        };
+        let job: Job = Job::new(
+            "".to_string(),
+            "pending".to_string(),
+            word.to_string(),
+            serde_json::to_string(&$job).unwrap(),
+        );
 
-        let _ = sqlx::query(
-            format!(
-                "INSERT INTO jobs (payload, status, model_type, data) VALUES ('{}', '{}', '{}', '{}');",
-                job.payload,
-                job.status,
-                job.model_type,
-                job.data
-            )
-            .as_str(),
-        )
-        .execute(&connection)
-        .await;
+        job_repository.add_job(&job).await;
     };
 }
