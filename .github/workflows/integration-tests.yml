@@ -20,9 +20,9 @@ jobs:
       - name: Run containers
         run: docker-compose up -f docker-compose.yml --detach
       - name: Migrate
-        run: docker-compose run worker cargo run --bin migrate
+        run: docker exec -it rust-queue-worker sh -c "cargo run --bin main"
       - name: Run tests
-        run: docker-compose run worker cargo test
+        run: docker exec -it rust-queue-worker sh -c "cargo test"
       - name: Stop containers
         if: always()
         run: docker-compose -f docker-compose.yml down
