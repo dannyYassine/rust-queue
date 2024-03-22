@@ -18,7 +18,7 @@ jobs:
       - name: Build containers
         run: docker-compose -f docker-compose.yml build
       - name: Migrate
-        run: docker-compose run worker cargo --bin migrate
+        run: docker-compose run worker cargo run --bin migrate
       - name: Run tests
         run: docker-compose run worker cargo test
       - name: Stop containers
