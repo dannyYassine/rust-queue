@@ -16,13 +16,13 @@ jobs:
         with:
           working-directory: .
       - name: Build containers
-        run: docker-compose -f docker-compose.yml build
+        run: docker-compose build
       - name: Run containers
-        run: docker-compose up -f docker-compose.yml --detach
+        run: docker-compose up -d
       - name: Wait
         run: sleep 5
       - name: Migrate
-        run: docker exec -it rust-queue-worker sh -c "cargo run --bin main"
+        run: docker exec -it rust-queue-worker sh -c "cargo run --bin migrate"
       - name: Run tests
         run: docker exec -it rust-queue-worker sh -c "cargo test"
       - name: Stop containers
