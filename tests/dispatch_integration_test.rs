@@ -1,16 +1,16 @@
-use dotenvy::dotenv;
 use rust_queue::{
     dispatch,
-    models::job::{self, Job, JobStatus},
-    repositories::job_repository,
+    models::job::{Job, JobStatus},
 };
 
 mod common;
+use common::set_up;
 use common::PrintToConsoleJob;
 
 #[tokio::test]
 async fn it_should_add_job_to_table() {
-    dotenv().ok();
+    set_up();
+
     let job_repository = JobRepository::new().await;
 
     let job = PrintToConsoleJob {

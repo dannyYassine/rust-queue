@@ -1,3 +1,4 @@
+use dotenvy::dotenv;
 use rust_queue::models::job::{JobHandle, JobName};
 use serde::{Deserialize, Serialize};
 
@@ -23,4 +24,8 @@ pub struct PrintToConsoleJob {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MultipleValueJob {
     pub value: i32,
+}
+
+pub fn set_up() {
+    dotenv().ok();
 }
