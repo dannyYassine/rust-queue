@@ -1,10 +1,10 @@
 #[cfg(test)]
 mod tests {
+    use crate::common::{set_up, PrintToConsoleJob};
     use rust_queue::{
         dispatch,
         models::job::{Job, JobStatus},
     };
-    use crate::common::{PrintToConsoleJob, set_up};
 
     #[tokio::test]
     async fn it_should_add_job_to_table() {

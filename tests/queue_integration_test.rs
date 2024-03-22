@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod tests {
+    use crate::common::set_up;
     use rust_queue::{
         models::{
             job::{Job, JobStatus},
@@ -7,7 +8,6 @@ mod tests {
         },
         repositories::job_repository::JobRepository,
     };
-    use crate::common::set_up;
 
     #[tokio::test]
     async fn it_should_handle_job_in_database() {
