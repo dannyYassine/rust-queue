@@ -9,13 +9,6 @@ impl JobHandle for PrintToConsoleJob {
     }
 }
 
-impl JobName for MultipleValueJob {}
-impl JobHandle for MultipleValueJob {
-    fn handle(&self) {
-        println!("running MultipleValueJob: {}", self.value * self.value);
-    }
-}
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PrintToConsoleJob {
     pub name: String,
@@ -28,4 +21,11 @@ pub struct MultipleValueJob {
 
 pub fn set_up() {
     dotenv().ok();
+}
+
+impl JobName for MultipleValueJob {}
+impl JobHandle for MultipleValueJob {
+    fn handle(&self) {
+        println!("running MultipleValueJob: {}", self.value * self.value);
+    }
 }
