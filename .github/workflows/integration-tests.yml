@@ -19,6 +19,8 @@ jobs:
         run: docker-compose -f docker-compose.yml build
       - name: Run containers
         run: docker-compose up -f docker-compose.yml --detach
+      - name: Wait
+        run: sleep 5
       - name: Migrate
         run: docker exec -it rust-queue-worker sh -c "cargo run --bin main"
       - name: Run tests
