@@ -17,6 +17,8 @@ jobs:
           working-directory: .
       - name: Build containers
         run: docker-compose -f docker-compose.yml build
+      - name: Run containers
+        run: docker-compose up -f docker-compose.yml --detach
       - name: Migrate
         run: docker-compose run worker cargo run --bin migrate
       - name: Run tests
