@@ -1,39 +1,38 @@
-#[cfg(test)]
-mod tests {
-    use crate::common::set_up;
-    use rust_queue::{
-        models::{
-            job::{Job, JobStatus},
-            queue::Queue,
-        },
-        repositories::job_repository::JobRepository,
-    };
+use rust_queue::{
+    models::{
+        job::{Job, JobStatus},
+        queue::Queue,
+    },
+    repositories::job_repository::JobRepository,
+};
 
-    #[tokio::test]
-    async fn it_should_handle_job_in_database() {
-        set_up();
+mod common;
+use common::set_up;
 
-        let job_repository = JobRepository::new().await;
-        job_repository.delete_all_jobs().await;
+#[tokio::test]
+async fn it_should_handle_job_in_database() {
+    set_up();
 
-        let job: Job = Job::new(
-            "{}".to_string(),
-            JobStatus::Pending.to_string(),
-            "rust_queue::models::job::Job".to_string(),
-            "".to_string(),
-        );
+    let job_repository = JobRepository::new().await;
+    job_repository.delete_all_jobs().await;
 
-        job_repository.add_job(&job).await;
+    let job: Job = Job::new(
+        "{}".to_string(),
+        JobStatus::Pending.to_string(),
+        "rust_queue::models::job::Job".to_string(),
+        "".to_string(),
+    );
 
-        let results: Option<Vec<Job>> = job_repository.get_all_jobs(Some(JobStatus::Pending)).await;
-        assert_eq!(results.unwrap().len(), 1);
+    job_repository.add_job(&job).await;
 
-        let mut queue: Queue = Queue::new_with_job_limit(1);
-        queue.listen().await;
+    let results: Option<Vec<Job>> = job_repository.get_all_jobs(Some(JobStatus::Pending)).await;
+    assert_eq!(results.unwrap().len(), 1);
 
-        let results: Option<Vec<Job>> = job_repository.get_all_jobs(Some(JobStatus::Pending)).await;
-        assert_eq!(results.unwrap().len(), 0);
+    let mut queue: Queue = Queue::new_with_job_limit(1);
+    queue.listen().await;
 
-        job_repository.delete_all_jobs().await;
-    }
+    let results: Option<Vec<Job>> = job_repository.get_all_jobs(Some(JobStatus::Pending)).await;
+    assert_eq!(results.unwrap().len(), 0);
+
+    job_repository.delete_all_jobs().await;
 }

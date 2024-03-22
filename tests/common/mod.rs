@@ -19,6 +19,7 @@ pub struct MultipleValueJob {
     pub value: i32,
 }
 
+#[allow(dead_code)] // for some reason, the tests module can interprete it
 pub fn set_up() {
     dotenv().ok();
 }

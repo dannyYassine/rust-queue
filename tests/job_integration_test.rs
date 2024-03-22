@@ -1,49 +1,48 @@
-#[cfg(test)]
-mod tests {
-    use rust_queue::models::job::{Job, JobStatus};
+use rust_queue::models::job::{Job, JobStatus};
 
-    #[test]
-    fn it_should_set_job_status_to_pending() {
-        let mut job: Job = Job {
-            id: 1,
-            payload: "".to_string(),
-            status: "".to_string(),
-            model_type: "".to_string(),
-            data: "".to_string(),
-        };
+mod common;
 
-        job.set_status_as_pending();
+#[test]
+fn it_should_set_job_status_to_pending() {
+    let mut job: Job = Job {
+        id: 1,
+        payload: "".to_string(),
+        status: "".to_string(),
+        model_type: "".to_string(),
+        data: "".to_string(),
+    };
 
-        assert_eq!(job.status, JobStatus::Pending.to_string());
-    }
+    job.set_status_as_pending();
 
-    #[test]
-    fn it_should_set_job_status_to_running() {
-        let mut job: Job = Job {
-            id: 1,
-            payload: "".to_string(),
-            status: "".to_string(),
-            model_type: "".to_string(),
-            data: "".to_string(),
-        };
+    assert_eq!(job.status, JobStatus::Pending.to_string());
+}
 
-        job.set_status_as_running();
+#[test]
+fn it_should_set_job_status_to_running() {
+    let mut job: Job = Job {
+        id: 1,
+        payload: "".to_string(),
+        status: "".to_string(),
+        model_type: "".to_string(),
+        data: "".to_string(),
+    };
 
-        assert_eq!(job.status, JobStatus::Running.to_string());
-    }
+    job.set_status_as_running();
 
-    #[test]
-    fn it_should_set_job_status_to_completed() {
-        let mut job: Job = Job {
-            id: 1,
-            payload: "".to_string(),
-            status: "".to_string(),
-            model_type: "".to_string(),
-            data: "".to_string(),
-        };
+    assert_eq!(job.status, JobStatus::Running.to_string());
+}
 
-        job.set_status_as_completed();
+#[test]
+fn it_should_set_job_status_to_completed() {
+    let mut job: Job = Job {
+        id: 1,
+        payload: "".to_string(),
+        status: "".to_string(),
+        model_type: "".to_string(),
+        data: "".to_string(),
+    };
 
-        assert_eq!(job.status, JobStatus::Completed.to_string());
-    }
+    job.set_status_as_completed();
+
+    assert_eq!(job.status, JobStatus::Completed.to_string());
 }
