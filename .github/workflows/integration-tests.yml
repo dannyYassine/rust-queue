@@ -22,7 +22,7 @@ jobs:
       - name: Wait
         run: sleep 10
       - name: Migrate
-        run: docker-compose run worker cargo --bin migrate
+        run: docker-compose run worker cargo run --bin migrate
       - name: Run tests
         run: docker-compose run worker cargo test
       - name: Stop containers
