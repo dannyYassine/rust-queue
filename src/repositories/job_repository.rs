@@ -1,0 +1,79 @@
+use std::env::{self, VarError};
+
+use sqlx::{PgPool, Postgres, Transaction};
+
+use crate::models::job::{Job, JobStatus};
+
+pub struct JobRepository {
+    connection: Option<PgPool>,
+}
+
+#[allow(dead_code)]
+impl JobRepository {
+    pub fn new() -> Self {
+        JobRepository { connection: None }
+    }
+    pub async fn add_job(&self, job: &Job) {
+        let _ = sqlx::query(
+            format!(
+                "INSERT INTO jobs (payload, status, model_type, data) VALUES ('{}', '{}', '{}', '{}');",
+                job.payload,
+                job.status,
+                job.model_type,
+                job.data
+            )
+            .as_str(),
+        )
+        .execute(self.connection.as_ref().unwrap())
+        .await;
+    }
+    pub async fn get_first_pending_job(&self) -> Option<(Job, Transaction<'_, Postgres>)> {
+        let mut tx = self.connection.as_ref().unwrap().begin().await.unwrap();
+
+        let result: Result<Job, _> = sqlx::query_as::<_, Job>(
+            "SELECT id, payload, status, model_type, data FROM jobs where status = 'pending'",
+        )
+        .fetch_one(&mut *tx)
+        .await;
+
+        if result.is_err() {
+            return None;
+        }
+
+        return Some((result.unwrap(), tx));
+    }
+    pub async fn get_all_jobs(&self, job_status: Option<JobStatus>) -> Option<Vec<Job>> {
+        let mut tx = self.connection.as_ref().unwrap().begin().await.unwrap();
+
+        let status = match job_status {
+            Some(status) => status,
+            _ => JobStatus::Pending,
+        };
+
+        let results: Result<Vec<Job>, _> = sqlx::query_as::<_, Job>(
+            "SELECT id, payload, status, model_type, data FROM jobs where status = {}",
+        )
+        .bind(status.to_string())
+        .fetch_all(&mut *tx)
+        .await;
+
+        if results.is_err() {
+            return None;
+        }
+
+        return Some(results.unwrap());
+    }
+    async fn bootstrap(&mut self) {
+        if let Some(_) = self.connection {
+            return;
+        }
+
+        let result: Result<String, VarError> = env::var("DATABASE_URL");
+
+        if result.is_err() {
+            panic!("Missing DATABASE_URL");
+        }
+
+        self.connection = Some(sqlx::PgPool::connect(&result.unwrap()).await.unwrap());
+    }
+}
