@@ -33,8 +33,9 @@ impl JobRepository {
         let mut tx = self.connection.begin().await.unwrap();
 
         let result: Result<Job, _> = sqlx::query_as::<_, Job>(
-            "SELECT id, payload, status, model_type, data FROM jobs where status = 'pending'",
+            "SELECT id, payload, status, model_type, data FROM jobs where status = {}",
         )
+        .bind(JobStatus::Pending.to_string())
         .fetch_one(&mut *tx)
         .await;
 
@@ -64,6 +65,11 @@ impl JobRepository {
         }
 
         return Some(results.unwrap());
+    }
+    pub async fn delete_all_jobs(&self) {
+        let _ = sqlx::query("DELETE from jobs;")
+            .execute(&self.connection)
+            .await;
     }
     pub async fn bootstrap() -> sqlx::Pool<Postgres> {
         let result: Result<String, VarError> = env::var("DATABASE_URL");

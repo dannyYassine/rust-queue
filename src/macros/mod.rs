@@ -1,9 +1,12 @@
 #[macro_export]
 macro_rules! dispatch {
     ($job:expr) => {
+        use dotenvy::dotenv;
         use rust_queue::repositories::job_repository::JobRepository;
         use std::any::type_name_of_val;
         use std::env::{self, VarError};
+
+        dotenv().ok();
 
         let job_repository = JobRepository::new().await;
 
