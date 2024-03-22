@@ -1,5 +1,9 @@
 use dotenvy::dotenv;
-use rust_queue::{dispatch, models::job::Job};
+use rust_queue::{
+    dispatch,
+    models::job::{self, Job, JobStatus},
+    repositories::job_repository,
+};
 
 mod common;
 use common::PrintToConsoleJob;
@@ -7,10 +11,7 @@ use common::PrintToConsoleJob;
 #[tokio::test]
 async fn it_should_add_job_to_table() {
     dotenv().ok();
-    let connection = sqlx::PgPool::connect(&env::var("DATABASE_URL").unwrap())
-        .await
-        .unwrap();
-    let _ = sqlx::query("DELETE from jobs;").execute(&connection).await;
+    let job_repository = JobRepository::new().await;
 
     let job = PrintToConsoleJob {
         name: "this is my job".to_string(),
@@ -18,14 +19,10 @@ async fn it_should_add_job_to_table() {
 
     dispatch!(job);
 
-    let results: Result<Vec<Job>, _> = sqlx::query_as::<_, Job>(
-        "SELECT id, payload, status, model_type, data FROM jobs where status = 'pending'",
-    )
-    .fetch_all(&connection)
-    .await;
+    let results = job_repository.get_all_jobs(Some(JobStatus::Pending)).await;
 
     let jobs = results.unwrap();
     assert_eq!(jobs.len(), 1);
 
-    let _ = sqlx::query("DELETE from jobs;").execute(&connection).await;
+    job_repository.delete_all_jobs().await;
 }

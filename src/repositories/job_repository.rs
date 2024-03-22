@@ -54,9 +54,12 @@ impl JobRepository {
         };
 
         let results: Result<Vec<Job>, _> = sqlx::query_as::<_, Job>(
-            "SELECT id, payload, status, model_type, data FROM jobs where status = {}",
+            format!(
+                "SELECT id, payload, status, model_type, data FROM jobs where status = '{}'",
+                status.to_string()
+            )
+            .as_str(),
         )
-        .bind(status.to_string())
         .fetch_all(&mut *tx)
         .await;
 
