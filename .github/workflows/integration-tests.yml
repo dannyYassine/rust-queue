@@ -9,7 +9,7 @@ on:
   pull_request:
 
 jobs:
-  vitest:
+  tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -17,6 +17,8 @@ jobs:
           working-directory: .
       - name: Build containers
         run: docker-compose -f docker-compose.yml build
+      - name: Migrate
+        run: docker-compose run worker cargo --bin migrate
       - name: Run tests
         run: docker-compose run worker cargo test
       - name: Stop containers

@@ -15,6 +15,22 @@ impl JobRepository {
             connection: Self::bootstrap().await,
         }
     }
+    pub async fn create_table(&self) {
+        let _ = sqlx::query(
+            format!(
+                "CREATE TABLE jobs (
+                    id SERIAL PRIMARY KEY,
+                    payload TEXT NOT NULL,
+                    status VARCHAR(20) NOT NULL DEFAULT 'pending',
+                    model_type TEXT NOT NULL,
+                    data TEXT NOT NULL,
+                );"
+            )
+            .as_str(),
+        )
+        .execute(&self.connection)
+        .await;
+    }
     pub async fn add_job(&self, job: &Job) {
         let _ = sqlx::query(
             format!(
