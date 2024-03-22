@@ -23,7 +23,7 @@ impl JobRepository {
                     payload TEXT NOT NULL,
                     status VARCHAR(20) NOT NULL DEFAULT 'pending',
                     model_type TEXT NOT NULL,
-                    data TEXT NOT NULL,
+                    data TEXT NOT NULL
                 );"
             )
             .as_str(),

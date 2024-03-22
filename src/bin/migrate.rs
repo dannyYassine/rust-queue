@@ -1,5 +1,5 @@
 use dotenvy::dotenv;
-use rust_queue::{models::job, repositories::job_repository::JobRepository};
+use rust_queue::repositories::job_repository::JobRepository;
 
 #[tokio::main]
 async fn main() {
