@@ -1,9 +1,6 @@
-use std::env::{self, VarError};
-
 use rust_queue::{
     models::{
-        app_state::AppStateManager,
-        data_connection::DatabaseConnection,
+        application::Application,
         job::{Job, JobStatus},
         queue::Queue,
     },
@@ -17,10 +14,7 @@ use common::set_up;
 async fn it_should_handle_job_in_database() {
     set_up();
 
-    let connection = DatabaseConnection::create().await;
-    AppStateManager::get_instance()
-        .initialize()
-        .set_connection(connection);
+    Application::bootstrap().await;
 
     let job_repository = JobRepository::new().await;
     job_repository.delete_all_jobs().await;

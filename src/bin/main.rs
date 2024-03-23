@@ -1,7 +1,6 @@
 use dotenvy::dotenv;
 use rust_queue::models::{
-    app_state::AppStateManager,
-    data_connection::DatabaseConnection,
+    application::Application,
     job::{JobHandle, JobName},
     queue::Queue,
 };
@@ -35,10 +34,7 @@ struct MultipleValueJob {
 async fn main() {
     dotenv().ok();
 
-    let connection = DatabaseConnection::create().await;
-    AppStateManager::get_instance()
-        .initialize()
-        .set_connection(connection);
+    Application::bootstrap().await;
 
     let mut queue: Queue = Queue::new()
         .register::<PrintToConsoleJob>()

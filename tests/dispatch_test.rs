@@ -1,8 +1,7 @@
 use rust_queue::{
     dispatch,
     models::{
-        app_state::AppStateManager,
-        data_connection::DatabaseConnection,
+        application::Application,
         job::{Job, JobStatus},
     },
 };
@@ -14,10 +13,7 @@ use common::{set_up, PrintToConsoleJob};
 async fn it_should_add_job_to_table() {
     set_up();
 
-    let connection = DatabaseConnection::create().await;
-    AppStateManager::get_instance()
-        .initialize()
-        .set_connection(connection);
+    Application::bootstrap().await;
 
     let job_repository = JobRepository::new().await;
 
