@@ -1,7 +1,10 @@
 use std::thread;
 
 use dotenvy::dotenv;
-use rust_queue::{dispatch, models::job::Job};
+use rust_queue::{
+    dispatch,
+    models::{app_state::AppStateManager, data_connection::DatabaseConnection, job::Job},
+};
 use serde::{Deserialize, Serialize};
 use tokio::runtime::Runtime;
 
@@ -18,6 +21,11 @@ struct MultipleValueJob {
 #[tokio::main]
 async fn main() {
     dotenv().ok();
+
+    let connection = DatabaseConnection::create().await;
+    AppStateManager::get_instance()
+        .initialize()
+        .set_connection(connection);
 
     let mut handles = vec![];
 

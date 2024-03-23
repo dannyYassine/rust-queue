@@ -2,6 +2,7 @@ use rust_queue::{
     dispatch,
     models::{
         app_state::AppStateManager,
+        data_connection::DatabaseConnection,
         job::{Job, JobStatus},
     },
 };
@@ -13,9 +14,7 @@ use common::{set_up, PrintToConsoleJob};
 async fn it_should_add_job_to_table() {
     set_up();
 
-    let result: Result<String, VarError> = env::var("DATABASE_URL");
-    let connection = sqlx::PgPool::connect(&result.unwrap()).await.unwrap();
-
+    let connection = DatabaseConnection::create().await;
     AppStateManager::get_instance()
         .initialize()
         .set_connection(connection);

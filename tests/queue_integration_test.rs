@@ -3,6 +3,7 @@ use std::env::{self, VarError};
 use rust_queue::{
     models::{
         app_state::AppStateManager,
+        data_connection::DatabaseConnection,
         job::{Job, JobStatus},
         queue::Queue,
     },
@@ -16,9 +17,7 @@ use common::set_up;
 async fn it_should_handle_job_in_database() {
     set_up();
 
-    let result: Result<String, VarError> = env::var("DATABASE_URL");
-    let connection = sqlx::PgPool::connect(&result.unwrap()).await.unwrap();
-
+    let connection = DatabaseConnection::create().await;
     AppStateManager::get_instance()
         .initialize()
         .set_connection(connection);

@@ -1,8 +1,7 @@
-use std::env::{self, VarError};
-
 use dotenvy::dotenv;
 use rust_queue::models::{
     app_state::AppStateManager,
+    data_connection::DatabaseConnection,
     job::{JobHandle, JobName},
     queue::Queue,
 };
@@ -36,9 +35,7 @@ struct MultipleValueJob {
 async fn main() {
     dotenv().ok();
 
-    let result: Result<String, VarError> = env::var("DATABASE_URL");
-    let connection = sqlx::PgPool::connect(&result.unwrap()).await.unwrap();
-
+    let connection = DatabaseConnection::create().await;
     AppStateManager::get_instance()
         .initialize()
         .set_connection(connection);
