@@ -1,14 +1,12 @@
 #![allow(unsafe_code)]
 
+use crate::models::app_state::AppStateManager;
 use crate::models::job::{Job, JobStatus};
 use serde::{Deserialize, Serialize};
-use sqlx::{PgPool, Postgres, Transaction};
+use sqlx::{Postgres, Transaction};
 use std::collections::HashMap;
+use std::io::Error;
 use std::sync::mpsc::{self, Sender};
-use std::{
-    env::{self, VarError},
-    io::Error,
-};
 use tokio::time::{sleep, Duration};
 
 use super::job::{JobHandle, JobName};
@@ -20,7 +18,6 @@ type JobClosure = Box<dyn Fn(String) -> Box<dyn JobHandle>>;
 type JobMap = HashMap<String, JobClosure>;
 
 pub struct Queue {
-    connection: Option<PgPool>,
     job_limit: Option<i32>,
     map: JobMap,
 }
@@ -28,7 +25,6 @@ pub struct Queue {
 impl Queue {
     pub fn new() -> Self {
         return Queue {
-            connection: None,
             job_limit: None,
             map: HashMap::new(),
         };
@@ -49,7 +45,6 @@ impl Queue {
     }
     pub fn new_with_job_limit(job_limit: i32) -> Self {
         return Queue {
-            connection: None,
             job_limit: Some(job_limit),
             map: HashMap::new(),
         };
@@ -61,7 +56,16 @@ impl Queue {
         println!("Processing jobs from the [default] queue.");
 
         loop {
-            let mut tx = self.connection.as_ref().unwrap().begin().await.unwrap();
+            let mut tx = AppStateManager::get_instance()
+                .get_state()
+                .as_ref()
+                .unwrap()
+                .connection
+                .as_ref()
+                .unwrap()
+                .begin()
+                .await
+                .unwrap();
 
             let job: Option<Job> = self.fetch_candidate_job(&mut tx).await;
 
@@ -101,13 +105,7 @@ impl Queue {
         }
     }
     async fn bootstrap(&mut self) {
-        let result: Result<String, VarError> = env::var("DATABASE_URL");
-
-        if result.is_err() {
-            panic!("Missing DATABASE_URL");
-        }
-
-        self.connection = Some(sqlx::PgPool::connect(&result.unwrap()).await.unwrap());
+        //
     }
     async fn fetch_candidate_job(&self, tx: &mut Transaction<'_, Postgres>) -> Option<Job> {
         let result: Result<Job, _> = sqlx::query_as::<_, Job>(
@@ -135,7 +133,15 @@ impl Queue {
         let result = sqlx::query("UPDATE jobs set status=$1 WHERE id = $2")
             .bind(job_status.to_string())
             .bind(job.id)
-            .execute(self.connection.as_ref().unwrap())
+            .execute(
+                AppStateManager::get_instance()
+                    .get_state()
+                    .as_ref()
+                    .unwrap()
+                    .connection
+                    .as_ref()
+                    .unwrap(),
+            )
             .await;
 
         if result.is_err() {

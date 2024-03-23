@@ -1,5 +1,8 @@
+use std::env::{self, VarError};
+
 use rust_queue::{
     models::{
+        app_state::AppStateManager,
         job::{Job, JobStatus},
         queue::Queue,
     },
@@ -12,6 +15,13 @@ use common::set_up;
 #[tokio::test]
 async fn it_should_handle_job_in_database() {
     set_up();
+
+    let result: Result<String, VarError> = env::var("DATABASE_URL");
+    let connection = sqlx::PgPool::connect(&result.unwrap()).await.unwrap();
+
+    AppStateManager::get_instance()
+        .initialize()
+        .set_connection(connection);
 
     let job_repository = JobRepository::new().await;
     job_repository.delete_all_jobs().await;

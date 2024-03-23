@@ -1,5 +1,8 @@
+use std::env::{self, VarError};
+
 use dotenvy::dotenv;
 use rust_queue::models::{
+    app_state::AppStateManager,
     job::{JobHandle, JobName},
     queue::Queue,
 };
@@ -32,6 +35,13 @@ struct MultipleValueJob {
 #[tokio::main]
 async fn main() {
     dotenv().ok();
+
+    let result: Result<String, VarError> = env::var("DATABASE_URL");
+    let connection = sqlx::PgPool::connect(&result.unwrap()).await.unwrap();
+
+    AppStateManager::get_instance()
+        .initialize()
+        .set_connection(connection);
 
     let mut queue: Queue = Queue::new()
         .register::<PrintToConsoleJob>()
