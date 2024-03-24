@@ -64,7 +64,6 @@ impl JobRepository {
         .await;
 
         if result.is_err() {
-            println!("{:?}", result.err());
             return None;
         }
 

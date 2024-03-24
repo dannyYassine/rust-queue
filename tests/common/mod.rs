@@ -1,8 +1,7 @@
 use dotenvy::dotenv;
-use rust_queue::models::job::{JobHandle, JobName};
+use rust_queue::models::job::JobHandle;
 use serde::{Deserialize, Serialize};
 
-impl JobName for PrintToConsoleJob {}
 impl JobHandle for PrintToConsoleJob {
     fn handle(&self) {
         println!("running PrintToConsoleJob");
@@ -24,7 +23,6 @@ pub fn set_up() {
     dotenv().ok();
 }
 
-impl JobName for MultipleValueJob {}
 impl JobHandle for MultipleValueJob {
     fn handle(&self) {
         println!("running MultipleValueJob: {}", self.value * self.value);

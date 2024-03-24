@@ -4,12 +4,13 @@ use crate::models::job::{Job, JobStatus};
 use crate::repositories::job_repository::JobRepository;
 use serde::{Deserialize, Serialize};
 use sqlx::Transaction;
+use std::any::type_name;
 use std::collections::HashMap;
 use std::io::Error;
 use std::sync::mpsc::{self, Sender};
 use tokio::time::{sleep, Duration};
 
-use super::job::{JobHandle, JobName};
+use super::job::JobHandle;
 
 // Type alias for the closure used in the JobMap
 type JobClosure = Box<dyn Fn(String) -> Box<dyn JobHandle>>;
@@ -33,10 +34,13 @@ impl Queue {
     }
     pub fn register<J>(mut self) -> Self
     where
-        J: JobName + JobHandle + Serialize + for<'de> Deserialize<'de>,
+        J: JobHandle + Serialize + for<'de> Deserialize<'de>,
     {
+        let s = type_name::<J>().to_owned();
+        let job_key = s.split("::").last().unwrap_or_default();
+
         self.map.insert(
-            J::name(),
+            job_key.to_owned(),
             Box::new(move |json_value: String| {
                 Box::new(serde_json::from_str::<J>(json_value.as_str()).unwrap())
                     as Box<dyn JobHandle>

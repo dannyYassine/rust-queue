@@ -1,15 +1,3 @@
-use std::any::type_name;
-
-// Trait for the associated constant `NAME`
-pub trait JobName: 'static {
-    fn name() -> String {
-        let s = type_name::<Self>().to_string();
-        let word = s.split("::").last().unwrap_or_default();
-
-        return word.to_owned();
-    }
-}
-
 // Trait for the method `handle`
 pub trait JobHandle: 'static {
     fn handle(&self);
