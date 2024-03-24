@@ -3,3 +3,4 @@ pub mod application;
 pub mod data_connection;
 pub mod job;
 pub mod queue;
+pub mod registry;
