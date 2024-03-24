@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex, MutexGuard};
 
 use lazy_static::lazy_static;
 use sqlx::PgPool;
@@ -19,14 +19,14 @@ impl AppState {
 }
 
 pub struct AppStateManager {
-    state: Arc<AppState>,
+    state: Arc<Mutex<AppState>>,
 }
 
 lazy_static! {
     static ref APP_STATE_MANAGER: AppStateManager = {
         let connection = DatabaseConnection::create();
         AppStateManager {
-            state: Arc::new(AppState::new(connection)),
+            state: Arc::new(Mutex::new(AppState::new(connection))),
         }
     };
 }
@@ -36,7 +36,7 @@ impl AppStateManager {
         &APP_STATE_MANAGER
     }
 
-    pub fn get_state(&self) -> Arc<AppState> {
-        return self.state.clone();
+    pub fn get_state(&self) -> MutexGuard<'_, AppState> {
+        return self.state.lock().unwrap();
     }
 }

@@ -9,6 +9,5 @@ async fn main() {
 
     let state = app_state_manager.get_state();
 
-    let app_state = state.as_ref();
-    println!("AppState: {:?}", app_state.connection);
+    println!("AppState: {:?}", state.connection);
 }

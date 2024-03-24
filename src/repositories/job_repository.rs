@@ -13,8 +13,7 @@ impl JobRepository {
         JobRepository {}
     }
     pub async fn create_table(&self) {
-        let s = AppStateManager::get_instance().get_state();
-        let state = s.as_ref();
+        let state = AppStateManager::get_instance().get_state();
         let connection = state.connection.as_ref().unwrap();
 
         let _ = sqlx::query(
@@ -33,8 +32,7 @@ impl JobRepository {
         .await;
     }
     pub async fn add_job(&self, job: &Job) {
-        let s = AppStateManager::get_instance().get_state();
-        let state = s.as_ref();
+        let state = AppStateManager::get_instance().get_state();
         let connection = state.connection.as_ref().unwrap();
 
         let _ = sqlx::query(
@@ -51,8 +49,7 @@ impl JobRepository {
         .await;
     }
     pub async fn get_first_pending_job(&self) -> Option<(Job, Transaction<'_, Postgres>)> {
-        let s = AppStateManager::get_instance().get_state();
-        let state = s.as_ref();
+        let state = AppStateManager::get_instance().get_state();
         let connection = state.connection.as_ref().unwrap();
         let mut tx = connection.begin().await.unwrap();
 
@@ -74,8 +71,7 @@ impl JobRepository {
         return Some((result.unwrap(), tx));
     }
     pub async fn get_all_jobs(&self, job_status: Option<JobStatus>) -> Option<Vec<Job>> {
-        let s = AppStateManager::get_instance().get_state();
-        let state = s.as_ref();
+        let state = AppStateManager::get_instance().get_state();
         let connection = state.connection.as_ref().unwrap();
         let mut tx = connection.begin().await.unwrap();
 
@@ -101,8 +97,7 @@ impl JobRepository {
         return Some(results.unwrap());
     }
     pub async fn update_job(&self, job: &Job, job_status: JobStatus) {
-        let s = AppStateManager::get_instance().get_state();
-        let state = s.as_ref();
+        let state = AppStateManager::get_instance().get_state();
         let connection = state.connection.as_ref().unwrap();
 
         let _ = sqlx::query(
@@ -117,8 +112,7 @@ impl JobRepository {
         .await;
     }
     pub async fn delete_all_jobs(&self) {
-        let s = AppStateManager::get_instance().get_state();
-        let state = s.as_ref();
+        let state = AppStateManager::get_instance().get_state();
         let connection = state.connection.as_ref().unwrap();
 
         let _ = sqlx::query("DELETE from jobs;").execute(connection).await;
