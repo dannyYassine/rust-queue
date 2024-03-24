@@ -1,22 +1,17 @@
 use std::{
+    any::{Any, TypeId},
     collections::HashMap,
     sync::{Arc, Mutex},
 };
 
 use lazy_static::lazy_static;
 
-pub trait HashableRegistry: Send {
-    fn clone_box(&self) -> Box<dyn HashableRegistry>;
-}
+type RegistryData = Arc<Mutex<HashMap<String, Box<dyn HashableRegistry + 'static>>>>;
 
-impl<T: 'static + HashableRegistry + Clone> HashableRegistry for T {
-    fn clone_box(&self) -> Box<dyn HashableRegistry> {
-        Box::new(self.clone())
-    }
-}
+pub trait HashableRegistry: Send + Any {}
 
 pub struct Registry {
-    map: Arc<Mutex<HashMap<String, Box<dyn HashableRegistry>>>>,
+    map: RegistryData,
 }
 
 lazy_static! {
@@ -28,20 +23,32 @@ lazy_static! {
 }
 
 impl Registry {
-    pub fn insert<T: HashableRegistry + 'static>(key: String, value: T) {
-        let mut map = REGISTRY.map.lock().unwrap();
-        map.insert(key, Box::new(value));
+    pub fn get_instance() -> &'static Self {
+        &REGISTRY
     }
 
-    pub fn get<T: 'static + Send + HashableRegistry + Clone>(
-        key: &str,
-    ) -> Option<Box<dyn HashableRegistry>> {
-        let map = REGISTRY.map.lock().unwrap();
-        map.get(key).clone().map(|v| v.clone_box())
+    pub fn set<T: HashableRegistry + 'static>(&self, key: &str, value: T) {
+        let mut map = self.map.lock().unwrap();
+        map.insert(key.to_string(), Box::new(value));
+    }
+
+    pub fn get<T: HashableRegistry, U>(&self, key: &str, func: Box<dyn Fn(Option<&T>) -> U>) -> U {
+        let map_clone = Arc::clone(&self.map);
+        let map = map_clone.lock().unwrap();
+
+        return func(downcast_ref::<T>(map.get(key).unwrap()));
     }
 
     pub fn clear(&self) {
         let mut map = self.map.lock().unwrap();
         map.clear();
+    }
+}
+
+fn downcast_ref<T: 'static>(any: &dyn Any) -> Option<&T> {
+    if any.type_id() == TypeId::of::<T>() {
+        unsafe { Some(&*(any as *const dyn Any as *const T)) }
+    } else {
+        None
     }
 }
