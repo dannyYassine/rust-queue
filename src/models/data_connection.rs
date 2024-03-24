@@ -1,13 +1,18 @@
 use std::env::{self, VarError};
 
-use sqlx::PgPool;
+use sqlx::{postgres::PgPoolOptions, PgPool};
 
 pub struct DatabaseConnection {}
 
 impl DatabaseConnection {
-    pub async fn create() -> PgPool {
+    pub fn create() -> PgPool {
         let result: Result<String, VarError> = env::var("DATABASE_URL");
-        let connection = sqlx::PgPool::connect(&result.unwrap()).await.unwrap();
+        let database_url = &result.unwrap();
+
+        let connection = PgPoolOptions::new()
+            .max_connections(16) // Set the maximum number of connections
+            .connect_lazy(database_url)
+            .expect("Failed to create pool");
 
         return connection;
     }

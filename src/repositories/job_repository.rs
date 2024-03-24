@@ -13,6 +13,10 @@ impl JobRepository {
         JobRepository {}
     }
     pub async fn create_table(&self) {
+        let s = AppStateManager::get_instance().get_state();
+        let state = s.as_ref();
+        let connection = state.connection.as_ref().unwrap();
+
         let _ = sqlx::query(
             format!(
                 "CREATE TABLE jobs (
@@ -25,18 +29,14 @@ impl JobRepository {
             )
             .as_str(),
         )
-        .execute(
-            AppStateManager::get_instance()
-                .get_state()
-                .as_ref()
-                .unwrap()
-                .connection
-                .as_ref()
-                .unwrap(),
-        )
+        .execute(connection)
         .await;
     }
     pub async fn add_job(&self, job: &Job) {
+        let s = AppStateManager::get_instance().get_state();
+        let state = s.as_ref();
+        let connection = state.connection.as_ref().unwrap();
+
         let _ = sqlx::query(
             format!(
                 "INSERT INTO jobs (payload, status, model_type, data) VALUES ('{}', '{}', '{}', '{}');",
@@ -47,26 +47,14 @@ impl JobRepository {
             )
             .as_str(),
         )
-        .execute(AppStateManager::get_instance()
-        .get_state()
-        .as_ref()
-        .unwrap()
-        .connection
-        .as_ref()
-        .unwrap())
+        .execute(connection)
         .await;
     }
     pub async fn get_first_pending_job(&self) -> Option<(Job, Transaction<'_, Postgres>)> {
-        let mut tx = AppStateManager::get_instance()
-            .get_state()
-            .as_ref()
-            .unwrap()
-            .connection
-            .as_ref()
-            .unwrap()
-            .begin()
-            .await
-            .unwrap();
+        let s = AppStateManager::get_instance().get_state();
+        let state = s.as_ref();
+        let connection = state.connection.as_ref().unwrap();
+        let mut tx = connection.begin().await.unwrap();
 
         let result: Result<Job, _> = sqlx::query_as::<_, Job>(
             "SELECT id, payload, status, model_type, data FROM jobs where status = {}",
@@ -82,16 +70,10 @@ impl JobRepository {
         return Some((result.unwrap(), tx));
     }
     pub async fn get_all_jobs(&self, job_status: Option<JobStatus>) -> Option<Vec<Job>> {
-        let mut tx = AppStateManager::get_instance()
-            .get_state()
-            .as_ref()
-            .unwrap()
-            .connection
-            .as_ref()
-            .unwrap()
-            .begin()
-            .await
-            .unwrap();
+        let s = AppStateManager::get_instance().get_state();
+        let state = s.as_ref();
+        let connection = state.connection.as_ref().unwrap();
+        let mut tx = connection.begin().await.unwrap();
 
         let status = match job_status {
             Some(status) => status,
@@ -115,16 +97,10 @@ impl JobRepository {
         return Some(results.unwrap());
     }
     pub async fn delete_all_jobs(&self) {
-        let _ = sqlx::query("DELETE from jobs;")
-            .execute(
-                AppStateManager::get_instance()
-                    .get_state()
-                    .as_ref()
-                    .unwrap()
-                    .connection
-                    .as_ref()
-                    .unwrap(),
-            )
-            .await;
+        let s = AppStateManager::get_instance().get_state();
+        let state = s.as_ref();
+        let connection = state.connection.as_ref().unwrap();
+
+        let _ = sqlx::query("DELETE from jobs;").execute(connection).await;
     }
 }

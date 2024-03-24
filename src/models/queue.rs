@@ -56,16 +56,10 @@ impl Queue {
         println!("Processing jobs from the [default] queue.");
 
         loop {
-            let mut tx = AppStateManager::get_instance()
-                .get_state()
-                .as_ref()
-                .unwrap()
-                .connection
-                .as_ref()
-                .unwrap()
-                .begin()
-                .await
-                .unwrap();
+            let s = AppStateManager::get_instance().get_state();
+            let state = s.as_ref();
+            let connection = state.connection.as_ref().unwrap();
+            let mut tx = connection.begin().await.unwrap();
 
             let job: Option<Job> = self.fetch_candidate_job(&mut tx).await;
 
@@ -130,18 +124,14 @@ impl Queue {
         self.mark_job_as_status(job, JobStatus::Completed).await;
     }
     async fn mark_job_as_status(&self, job: &Job, job_status: JobStatus) {
+        let s = AppStateManager::get_instance().get_state();
+        let state = s.as_ref();
+        let connection = state.connection.as_ref().unwrap();
+
         let result = sqlx::query("UPDATE jobs set status=$1 WHERE id = $2")
             .bind(job_status.to_string())
             .bind(job.id)
-            .execute(
-                AppStateManager::get_instance()
-                    .get_state()
-                    .as_ref()
-                    .unwrap()
-                    .connection
-                    .as_ref()
-                    .unwrap(),
-            )
+            .execute(connection)
             .await;
 
         if result.is_err() {

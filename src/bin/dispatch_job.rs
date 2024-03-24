@@ -26,21 +26,25 @@ async fn main() {
 
     let mut handles = vec![];
 
-    for _ in 0..5 {
+    for i in 0..5 {
+        println!("Dispatch first job {}", i);
         let rt = Runtime::new().unwrap();
         let handle = thread::spawn(move || {
             rt.block_on(async {
                 run_job_1().await;
+                println!("Dispatch first job {} finished", i);
             });
         });
         handles.push(handle);
     }
 
-    for _ in 0..5 {
+    for i in 0..5 {
+        println!("Dispatch second job {}", i);
         let rt = Runtime::new().unwrap();
         let handle = thread::spawn(move || {
             rt.block_on(async {
                 run_job_2().await;
+                println!("Dispatch second job {} finished", i);
             });
         });
         handles.push(handle);
@@ -55,12 +59,10 @@ async fn run_job_1() {
     let job = PrintToConsoleJob {
         name: "this is my job".to_string(),
     };
-    println!("Dispatch job");
     dispatch!(job);
 }
 
 async fn run_job_2() {
     let job = MultipleValueJob { value: 2 };
-    println!("Dispatch job");
     dispatch!(job);
 }

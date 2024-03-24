@@ -1,6 +1,9 @@
-use std::sync::{Mutex, MutexGuard};
+use std::sync::Arc;
 
+use lazy_static::lazy_static;
 use sqlx::PgPool;
+
+use super::data_connection::DatabaseConnection;
 
 #[derive(Debug)]
 pub struct AppState {
@@ -8,39 +11,32 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub fn new() -> Self {
-        AppState { connection: None }
+    pub fn new(connection: PgPool) -> Self {
+        AppState {
+            connection: Some(connection),
+        }
     }
 }
 
 pub struct AppStateManager {
-    state: Mutex<Option<AppState>>,
+    state: Arc<AppState>,
+}
+
+lazy_static! {
+    static ref APP_STATE_MANAGER: AppStateManager = {
+        let connection = DatabaseConnection::create();
+        AppStateManager {
+            state: Arc::new(AppState::new(connection)),
+        }
+    };
 }
 
 impl AppStateManager {
     pub fn get_instance() -> &'static Self {
-        static INSTANCE: AppStateManager = AppStateManager {
-            state: Mutex::new(None),
-        };
-
-        return &INSTANCE;
+        &APP_STATE_MANAGER
     }
 
-    pub fn initialize(&self) -> &Self {
-        let mut guard = self.state.lock().unwrap();
-        *guard = Some(AppState::new());
-
-        return self;
-    }
-
-    pub fn set_connection(&self, connection: PgPool) {
-        let mut guard = self.state.lock().unwrap();
-        if let Some(ref mut state) = *guard {
-            state.connection = Some(connection);
-        }
-    }
-
-    pub fn get_state(&self) -> MutexGuard<'_, Option<AppState>> {
-        return self.state.lock().unwrap();
+    pub fn get_state(&self) -> Arc<AppState> {
+        return self.state.clone();
     }
 }

@@ -14,8 +14,8 @@ async fn it_should_add_job_to_table() {
     set_up();
 
     Application::bootstrap().await;
-
     let job_repository = JobRepository::new().await;
+    job_repository.delete_all_jobs().await;
 
     let job = PrintToConsoleJob {
         name: "this is my job".to_string(),

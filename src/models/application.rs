@@ -1,4 +1,4 @@
-use super::{app_state::AppStateManager, data_connection::DatabaseConnection};
+use super::app_state::AppStateManager;
 
 pub struct Application {}
 
@@ -8,9 +8,6 @@ impl Application {
     }
 
     async fn set_up_database_connection() {
-        let connection = DatabaseConnection::create().await;
-        AppStateManager::get_instance()
-            .initialize()
-            .set_connection(connection);
+        let _ = AppStateManager::get_instance();
     }
 }

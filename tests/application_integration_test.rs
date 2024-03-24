@@ -11,8 +11,6 @@ async fn it_should_create_connection_into_app_state_manager() {
 
     assert!(AppStateManager::get_instance()
         .get_state()
-        .as_ref()
-        .unwrap()
         .connection
         .is_some());
 }
