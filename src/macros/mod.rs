@@ -8,7 +8,7 @@ macro_rules! dispatch {
 
         dotenv().ok();
 
-        let job_repository = JobRepository::new().await;
+        let job_repository = JobRepository::new();
 
         let s = type_name_of_val(&$job).to_string();
         let word = s.split("::").last().unwrap_or_default();

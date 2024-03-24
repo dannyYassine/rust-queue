@@ -2,6 +2,7 @@
 
 use crate::models::app_state::AppStateManager;
 use crate::models::job::{Job, JobStatus};
+use crate::repositories::job_repository::{self, JobRepository};
 use serde::{Deserialize, Serialize};
 use sqlx::{Postgres, Transaction};
 use std::collections::HashMap;
@@ -20,6 +21,7 @@ type JobMap = HashMap<String, JobClosure>;
 pub struct Queue {
     job_limit: Option<i32>,
     map: JobMap,
+    job_repository: JobRepository,
 }
 
 impl Queue {
@@ -27,6 +29,7 @@ impl Queue {
         return Queue {
             job_limit: None,
             map: HashMap::new(),
+            job_repository: JobRepository::new(),
         };
     }
     pub fn register<J>(mut self) -> Self
@@ -47,6 +50,7 @@ impl Queue {
         return Queue {
             job_limit: Some(job_limit),
             map: HashMap::new(),
+            job_repository: JobRepository::new(),
         };
     }
     pub async fn listen(&mut self) {
@@ -56,19 +60,16 @@ impl Queue {
         println!("Processing jobs from the [default] queue.");
 
         loop {
-            let s = AppStateManager::get_instance().get_state();
-            let state = s.as_ref();
-            let connection = state.connection.as_ref().unwrap();
-            let mut tx = connection.begin().await.unwrap();
+            let result: Option<(Job, Transaction<'_, _>)> =
+                self.job_repository.get_first_pending_job().await;
 
-            let job: Option<Job> = self.fetch_candidate_job(&mut tx).await;
-
-            if job.is_none() {
+            if result.is_none() {
                 println!("No jobs found, retrying in 1 second");
                 sleep(Duration::from_secs(1)).await;
                 continue;
             }
-            let mut job: Job = job.unwrap();
+            let (mut job, tx) = result.unwrap();
+
             if let Some(job_handle) = self.map.get(job.model_type.as_str()) {
                 job_handle(job.data.to_owned()).handle();
             }

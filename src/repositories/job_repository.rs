@@ -9,7 +9,7 @@ pub struct JobRepository {}
 
 #[allow(dead_code)]
 impl JobRepository {
-    pub async fn new() -> Self {
+    pub fn new() -> Self {
         JobRepository {}
     }
     pub async fn create_table(&self) {
@@ -57,13 +57,17 @@ impl JobRepository {
         let mut tx = connection.begin().await.unwrap();
 
         let result: Result<Job, _> = sqlx::query_as::<_, Job>(
-            "SELECT id, payload, status, model_type, data FROM jobs where status = {}",
+            format!(
+                "SELECT id, payload, status, model_type, data FROM jobs where status = '{}'",
+                JobStatus::Pending.to_string()
+            )
+            .as_str(),
         )
-        .bind(JobStatus::Pending.to_string())
         .fetch_one(&mut *tx)
         .await;
 
         if result.is_err() {
+            println!("{:?}", result.err());
             return None;
         }
 

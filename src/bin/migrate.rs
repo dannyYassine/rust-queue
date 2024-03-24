@@ -9,7 +9,7 @@ async fn main() {
 
     println!("Running migrations");
 
-    let job_repo = JobRepository::new().await;
+    let job_repo = JobRepository::new();
 
     job_repo.create_table().await;
 }

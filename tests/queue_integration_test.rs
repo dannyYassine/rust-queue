@@ -16,7 +16,7 @@ async fn it_should_handle_job_in_database() {
 
     Application::bootstrap().await;
 
-    let job_repository = JobRepository::new().await;
+    let job_repository = JobRepository::new();
     job_repository.delete_all_jobs().await;
 
     let job: Job = Job::new(
