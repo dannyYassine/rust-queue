@@ -100,6 +100,22 @@ impl JobRepository {
 
         return Some(results.unwrap());
     }
+    pub async fn update_job(&self, job: &Job, job_status: JobStatus) {
+        let s = AppStateManager::get_instance().get_state();
+        let state = s.as_ref();
+        let connection = state.connection.as_ref().unwrap();
+
+        let _ = sqlx::query(
+            format!(
+                "UPDATE jobs set status='{}' WHERE id = '{}'",
+                job_status.to_string(),
+                job.id
+            )
+            .as_str(),
+        )
+        .execute(connection)
+        .await;
+    }
     pub async fn delete_all_jobs(&self) {
         let s = AppStateManager::get_instance().get_state();
         let state = s.as_ref();

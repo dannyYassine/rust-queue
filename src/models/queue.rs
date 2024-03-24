@@ -1,10 +1,9 @@
 #![allow(unsafe_code)]
 
-use crate::models::app_state::AppStateManager;
 use crate::models::job::{Job, JobStatus};
-use crate::repositories::job_repository::{self, JobRepository};
+use crate::repositories::job_repository::JobRepository;
 use serde::{Deserialize, Serialize};
-use sqlx::{Postgres, Transaction};
+use sqlx::Transaction;
 use std::collections::HashMap;
 use std::io::Error;
 use std::sync::mpsc::{self, Sender};
@@ -55,7 +54,6 @@ impl Queue {
     }
     pub async fn listen(&mut self) {
         let mut count: i32 = 0;
-        self.bootstrap().await;
 
         println!("Processing jobs from the [default] queue.");
 
@@ -99,22 +97,6 @@ impl Queue {
             }
         }
     }
-    async fn bootstrap(&mut self) {
-        //
-    }
-    async fn fetch_candidate_job(&self, tx: &mut Transaction<'_, Postgres>) -> Option<Job> {
-        let result: Result<Job, _> = sqlx::query_as::<_, Job>(
-            "SELECT id, payload, status, model_type, data FROM jobs where status = 'pending'",
-        )
-        .fetch_one(&mut **tx)
-        .await;
-
-        if result.is_err() {
-            return None;
-        }
-
-        return Some(result.unwrap());
-    }
     async fn mark_job_as_pending(&self, job: &Job) {
         self.mark_job_as_status(job, JobStatus::Pending).await;
     }
@@ -125,19 +107,7 @@ impl Queue {
         self.mark_job_as_status(job, JobStatus::Completed).await;
     }
     async fn mark_job_as_status(&self, job: &Job, job_status: JobStatus) {
-        let s = AppStateManager::get_instance().get_state();
-        let state = s.as_ref();
-        let connection = state.connection.as_ref().unwrap();
-
-        let result = sqlx::query("UPDATE jobs set status=$1 WHERE id = $2")
-            .bind(job_status.to_string())
-            .bind(job.id)
-            .execute(connection)
-            .await;
-
-        if result.is_err() {
-            println!("{:?}", result);
-        }
+        self.job_repository.update_job(job, job_status).await;
     }
     async fn execute_job(&self, job: &Job) -> Result<bool, Error> {
         println!("Processing job {} started", job.id);
