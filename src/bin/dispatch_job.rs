@@ -20,8 +20,6 @@ struct MultipleValueJob {
 
 #[tokio::main]
 async fn main() {
-    dotenv().ok();
-
     Application::bootstrap().await;
 
     let mut handles = vec![];

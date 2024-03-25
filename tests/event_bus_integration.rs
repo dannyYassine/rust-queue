@@ -1,4 +1,4 @@
-use std::{cell::RefCell, rc::Rc};
+use std::sync::{Arc, Mutex};
 
 use rust_queue::models::event_bus::EventBus;
 
@@ -19,8 +19,8 @@ async fn it_should_listen_to_typed_event() {
         data: String::from("value"),
     };
 
-    let rc = Rc::new(custom_event);
-    let another_rc = Rc::clone(&rc);
+    let rc = Arc::new(custom_event);
+    let another_rc = Arc::clone(&rc);
     event_bus.listen::<MyCustomEventWithData>(move |event: &MyCustomEventWithData| {
         assert_eq!(rc.data, event.data);
     });
@@ -44,16 +44,17 @@ async fn it_should_clear_all_listeners() {
         data: String::from("value"),
     };
 
-    let did_call = Rc::new(RefCell::new(data));
-    let did_call_clone = Rc::clone(&did_call);
+    let did_call = Arc::new(Mutex::new(data));
+    let did_call_clone = Arc::clone(&did_call);
 
     event_bus.listen::<MyCustomEventWithData>(move |_| {
-        did_call.borrow_mut().did_call = true;
+        let mut value = did_call.lock().unwrap();
+        value.did_call = true;
     });
 
     event_bus.clear();
 
     event_bus.emit::<MyCustomEventWithData>(&custom_event);
 
-    assert_eq!(did_call_clone.borrow().did_call, false);
+    assert_eq!(did_call_clone.lock().unwrap().did_call, false);
 }
