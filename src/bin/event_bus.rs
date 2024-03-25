@@ -11,8 +11,8 @@ fn main() {
         data: String::from("value"),
     };
 
-    event_bus.listen::<Event>(Box::new(|e| {
-        println!("Hi event {:?}!", e);
+    event_bus.listen::<Event>(Box::new(|e: &Event| {
+        println!("Hi event {:?}!", e.data);
     }));
 
     event_bus.emit(&event);
