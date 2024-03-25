@@ -7,6 +7,9 @@ use std::{
 use super::event_bus::SharedEventBus;
 
 pub trait Listener: Sync + 'static + Send {
+    fn cast<E>(&self, event: &dyn Any) -> Option<&E> {
+        return event.downcast_ref::<E>();
+    }
     fn handle(&self, event: Box<&dyn Any>) {
         println!("Hi from event dispatcher: {:?}", event);
     }

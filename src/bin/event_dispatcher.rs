@@ -16,7 +16,7 @@ struct MyEvent {
 struct MyListener {}
 impl Listener for MyListener {
     fn handle(&self, event: Box<&dyn Any>) {
-        let e = event.downcast_ref::<MyEvent>();
+        let e = self.cast::<MyEvent>(&event);
         println!("Hi from MyListener: {:?}", e);
     }
 }
@@ -25,7 +25,7 @@ impl Listener for MyListener {
 struct MySecondListener {}
 impl Listener for MySecondListener {
     fn handle(&self, event: Box<&dyn Any>) {
-        let e = event.downcast_ref::<MyEvent>();
+        let e = self.cast::<MyEvent>(&event);
         println!("Hi from MySecondListener, {:?}", e);
     }
 }
