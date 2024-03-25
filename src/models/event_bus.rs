@@ -33,9 +33,14 @@ impl EventBus {
         let s = type_name::<E>().to_owned();
         let key = s.split("::").last().unwrap_or_default().to_owned();
 
-        let listeners = self.listeners.get(&key).unwrap();
-        for listener in listeners {
-            listener(Box::new(event));
+        if let Some(listeners) = self.listeners.get(&key) {
+            for listener in listeners {
+                listener(Box::new(event));
+            }
         }
+    }
+
+    pub fn clear(&mut self) {
+        self.listeners.clear();
     }
 }
