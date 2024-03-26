@@ -81,9 +81,11 @@ impl EventDispatcher {
             self.event_map
                 .lock()
                 .unwrap()
-                .entry(event)
+                .entry(event.clone())
                 .or_insert_with(Vec::new)
                 .extend(event_map);
+
+            self.listen_to_event_with_key(event);
         }
 
         return self;
