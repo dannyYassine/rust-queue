@@ -43,8 +43,11 @@ impl CanHandleEvent for MySecondListener {
 struct MySubscriber {}
 impl CanHandleEvent for MySubscriber {
     fn handle(&self, event: Box<&dyn Any>) {
-        let e = event.downcast_ref::<MyEvent>();
-        println!("Hi from MySubscriber, {:?}", e);
+        if let Some(event) = event.downcast_ref::<MyEvent>() {
+            println!("Hi from MySubscriber, {:?}", event);
+        } else if let Some(event) = event.downcast_ref::<MyOtherEvent>() {
+            println!("Hi from MySubscriber, {:?}", event);
+        }
     }
 }
 impl Subscriber for MySubscriber {
