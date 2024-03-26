@@ -6,8 +6,6 @@ use std::{
 
 use lazy_static::lazy_static;
 
-pub type EventType<'a> = Box<&'a dyn Any>;
-
 pub type EventListener = Box<dyn Fn(Box<&dyn Any>) + Send>;
 
 #[derive(Default)]

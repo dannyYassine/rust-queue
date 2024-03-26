@@ -1,9 +1,7 @@
-use std::any::Any;
-
 use rust_queue::models::{
     application::Application,
-    event_bus::{EventType, SharedEventBus},
-    event_dispatcher::{CanHandleEvent, Event, EventDispatcher, Subscriber},
+    event_bus::SharedEventBus,
+    event_dispatcher::{CanHandleEvent, Event, EventDispatcher, EventType, Subscriber},
 };
 
 #[derive(Debug, Default)]
@@ -48,7 +46,7 @@ where
 struct MyListener();
 impl CanHandleEvent for MyListener {
     fn handle(&self, event: EventType) {
-        if let Some(event) = event.downcast_ref::<MyEvent>() {
+        if let Some(event) = event.cast::<MyEvent>() {
             resolve::<SendEmailUseCase>().execute(event.data);
         }
     }
@@ -58,7 +56,7 @@ impl CanHandleEvent for MyListener {
 struct MySecondListener {}
 impl CanHandleEvent for MySecondListener {
     fn handle(&self, event: EventType) {
-        let e = event.downcast_ref::<MyEvent>();
+        let e = event.cast::<MyEvent>();
         println!("Hi from MySecondListener, {:?}", e);
     }
 }
@@ -67,10 +65,10 @@ impl CanHandleEvent for MySecondListener {
 struct MySubscriber {}
 impl CanHandleEvent for MySubscriber {
     fn handle(&self, event: EventType) {
-        if let Some(event) = event.downcast_ref::<MyEvent>() {
+        if let Some(event) = event.cast::<MyEvent>() {
             println!("Hi from MySubscriber MyEvent, {:?}", event);
             resolve::<SendEmailUseCase>().execute(event.data);
-        } else if let Some(event) = event.downcast_ref::<MyOtherEvent>() {
+        } else if let Some(event) = event.cast::<MyOtherEvent>() {
             println!("Hi from MySubscriber MyOtherEvent, {:?}", event);
         }
     }

@@ -4,7 +4,15 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use super::event_bus::{EventType, SharedEventBus};
+use super::event_bus::SharedEventBus;
+
+#[derive(Debug)]
+pub struct EventType<'a>(Box<&'a dyn Any>);
+impl<'a> EventType<'a> {
+    pub fn cast<T: 'static>(&self) -> Option<&'a T> {
+        self.0.downcast_ref::<T>()
+    }
+}
 
 pub trait Event {
     fn name() -> String {
@@ -102,7 +110,7 @@ impl EventDispatcher {
         event_bus.listen_with_key(&key, move |event: Box<&dyn Any>| {
             if let Some(listeners) = clone.lock().unwrap().get(&owned_key) {
                 for listener in listeners {
-                    listener.handle(event.clone());
+                    listener.handle(EventType(event.clone()));
                 }
             }
         })
@@ -124,7 +132,7 @@ impl EventDispatcher {
 
             if let Some(listeners) = clone.lock().unwrap().get(&key) {
                 for listener in listeners {
-                    listener.handle(Box::new(event));
+                    listener.handle(EventType(Box::new(event)));
                 }
             }
         })
