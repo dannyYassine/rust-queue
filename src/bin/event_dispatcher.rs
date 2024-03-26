@@ -27,6 +27,7 @@ impl Resolvable for SendEmailUseCase {
     }
 }
 impl SendEmailUseCase {
+    #[allow(unused)]
     fn execute(&self, data: i32) {
         println!("Email sent!");
     }
