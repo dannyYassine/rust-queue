@@ -65,9 +65,9 @@ async fn main() {
             Box::new(MyListener::default()),
             Box::new(MySecondListener::default()),
         ])
-        .bind_event::<MyEvent>(vec![Box::new(MyListener::default())])
-        .bind_event::<MyEvent>(vec![Box::new(MySecondListener::default())])
+        .bind_event::<MyOtherEvent>(vec![Box::new(MySecondListener::default())])
         .bind_subscriber::<MySubscriber>();
 
     SharedEventBus::emit(&MyEvent { data: 1 });
+    SharedEventBus::emit(&MyOtherEvent { data: 2 });
 }

@@ -14,6 +14,23 @@ pub struct EventBus {
 }
 
 impl EventBus {
+    pub fn has_key(&self, key: &String) -> bool {
+        return self.listeners.contains_key(key);
+    }
+    pub fn has<E>(&self) -> bool {
+        let s = type_name::<E>().to_owned();
+        let key = s.split("::").last().unwrap_or_default().to_owned();
+
+        return self.listeners.contains_key(&key);
+    }
+    pub fn listen_with_key(&mut self, key: &String, func: impl Fn(Box<&dyn Any>) + 'static + Send) {
+        self.listeners
+            .entry(key.to_owned())
+            .or_insert_with(Vec::new)
+            .push(Box::new(move |event: Box<&dyn Any>| {
+                func(event);
+            }));
+    }
     pub fn listen<E>(&mut self, func: impl Fn(&E) + 'static + Send)
     where
         E: 'static + Send,

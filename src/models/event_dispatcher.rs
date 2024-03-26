@@ -38,6 +38,14 @@ impl EventDispatcher {
             event_map: Arc::new(Mutex::new(HashMap::new())),
         }
     }
+    pub fn register_event<E>(&mut self) -> &mut Self
+    where
+        E: 'static + Send,
+    {
+        self.bind_event::<E>(vec![]);
+
+        return self;
+    }
     pub fn bind_event<E>(&mut self, event_map: Vec<Box<dyn CanHandleEvent>>) -> &mut Self
     where
         E: 'static + Send,
@@ -56,7 +64,7 @@ impl EventDispatcher {
 
         return self;
     }
-    pub fn bind_subscriber<S>(&self)
+    pub fn bind_subscriber<S>(&mut self) -> &mut Self
     where
         S: Subscriber + CanHandleEvent + Default,
     {
@@ -65,25 +73,47 @@ impl EventDispatcher {
 
         for event in events {
             let subscriber = S::default();
-            let event_map = vec![subscriber];
+            let event_map: Vec<Box<dyn CanHandleEvent>> = vec![Box::new(subscriber)]
+                .into_iter()
+                .map(|s| s as Box<dyn CanHandleEvent>)
+                .collect();
 
             self.event_map
                 .lock()
                 .unwrap()
-                .entry(event.to_owned())
+                .entry(event)
                 .or_insert_with(Vec::new)
-                .extend(
-                    event_map
-                        .into_iter()
-                        .map(|s| Box::new(s) as Box<dyn CanHandleEvent>),
-                );
+                .extend(event_map);
         }
+
+        return self;
+    }
+    fn listen_to_event_with_key(&self, key: String) {
+        let mut event_bus = SharedEventBus::get_instance().event_bus.lock().unwrap();
+
+        if event_bus.has_key(&key) {
+            return;
+        }
+
+        let clone = Arc::clone(&self.event_map);
+        let owned_key = key.to_owned();
+        event_bus.listen_with_key(&key, move |event: Box<&dyn Any>| {
+            if let Some(listeners) = clone.lock().unwrap().get(&owned_key) {
+                for listener in listeners {
+                    listener.handle(event.clone());
+                }
+            }
+        })
     }
     fn listen_to_event<E>(&self)
     where
         E: 'static + Send,
     {
         let mut event_bus = SharedEventBus::get_instance().event_bus.lock().unwrap();
+
+        if event_bus.has::<E>() {
+            return;
+        }
 
         let clone = Arc::clone(&self.event_map);
         event_bus.listen::<E>(move |event: &E| {
