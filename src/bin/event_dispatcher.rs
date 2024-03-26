@@ -3,7 +3,7 @@ use std::any::Any;
 use rust_queue::models::{
     application::Application,
     event_bus::SharedEventBus,
-    event_dispatcher::{CanHandleEvent, Event, EventDispatcher, Listener, Subscriber},
+    event_dispatcher::{CanHandleEvent, Event, EventDispatcher, Subscriber},
 };
 
 #[derive(Debug, Default)]
