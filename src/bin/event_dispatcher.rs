@@ -1,7 +1,8 @@
 use rust_queue::models::{
     application::Application,
     event_bus::SharedEventBus,
-    event_dispatcher::{CanHandleEvent, Event, EventDispatcher, EventType, Subscriber},
+    event_dispatcher::{CanHandleEvent, Event, EventDispatcher, EventType, Listener, Subscriber},
+    resolve::{resolve, Resolvable},
 };
 
 #[derive(Debug, Default)]
@@ -31,19 +32,13 @@ impl SendEmailUseCase {
     }
 }
 
-trait Resolvable {
-    fn resolve() -> Self;
-}
-
-fn resolve<S>() -> S
-where
-    S: Resolvable,
-{
-    S::resolve()
-}
-
 #[derive(Default)]
 struct MyListener();
+impl Listener for MyListener {
+    fn get_event(&self) -> String {
+        MyEvent::name()
+    }
+}
 impl CanHandleEvent for MyListener {
     fn handle(&self, event: EventType) {
         if let Some(event) = event.cast::<MyEvent>() {
@@ -51,9 +46,13 @@ impl CanHandleEvent for MyListener {
         }
     }
 }
-
 #[derive(Default)]
 struct MySecondListener {}
+impl Listener for MySecondListener {
+    fn get_event(&self) -> String {
+        MyEvent::name()
+    }
+}
 impl CanHandleEvent for MySecondListener {
     fn handle(&self, event: EventType) {
         let e = event.cast::<MyEvent>();
@@ -63,19 +62,25 @@ impl CanHandleEvent for MySecondListener {
 
 #[derive(Default)]
 struct MySubscriber {}
-impl CanHandleEvent for MySubscriber {
-    fn handle(&self, event: EventType) {
-        if let Some(event) = event.cast::<MyEvent>() {
-            println!("Hi from MySubscriber MyEvent, {:?}", event);
-            resolve::<SendEmailUseCase>().execute(event.data);
-        } else if let Some(event) = event.cast::<MyOtherEvent>() {
-            println!("Hi from MySubscriber MyOtherEvent, {:?}", event);
-        }
-    }
-}
 impl Subscriber for MySubscriber {
     fn get_events(&self) -> Vec<String> {
         return vec![MyEvent::name(), MyOtherEvent::name()];
+    }
+}
+impl CanHandleEvent for MySubscriber {
+    fn handle(&self, event: EventType) {
+        let mut data = None;
+        if let Some(event) = event.cast::<MyEvent>() {
+            println!("Hi from MySubscriber MyEvent, {:?}", event);
+            data = Some(event.data);
+        } else if let Some(event) = event.cast::<MyOtherEvent>() {
+            println!("Hi from MySubscriber MyOtherEvent, {:?}", event);
+            data = Some(event.data);
+        }
+
+        if let Some(data) = data {
+            resolve::<SendEmailUseCase>().execute(data);
+        }
     }
 }
 
@@ -84,11 +89,7 @@ async fn main() {
     Application::bootstrap().await;
 
     EventDispatcher::new()
-        .bind_event::<MyEvent>(vec![
-            Box::new(MyListener::default()),
-            Box::new(MySecondListener::default()),
-        ])
-        .bind_event::<MyOtherEvent>(vec![Box::new(MySecondListener::default())])
+        .bind_listener::<MyListener>()
         .bind_subscriber::<MySubscriber>();
 
     SharedEventBus::emit(&MyEvent { data: 1 });

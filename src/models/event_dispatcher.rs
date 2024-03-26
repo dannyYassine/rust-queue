@@ -30,7 +30,9 @@ pub trait CanHandleEvent: Sync + 'static + Send {
     }
 }
 
-pub trait Listener: Sync + 'static + Send + CanHandleEvent {}
+pub trait Listener: Sync + 'static + Send + CanHandleEvent {
+    fn get_event(&self) -> String;
+}
 
 pub trait Subscriber: CanHandleEvent + Sync + 'static + Send {
     fn get_events(&self) -> Vec<String>;
@@ -69,6 +71,29 @@ impl EventDispatcher {
             .extend(event_map);
 
         self.listen_to_event::<E>();
+
+        return self;
+    }
+    pub fn bind_listener<L>(&mut self) -> &mut Self
+    where
+        L: Listener + CanHandleEvent + Default,
+    {
+        let listener = L::default();
+        let key = listener.get_event();
+
+        let event_map: Vec<Box<dyn CanHandleEvent>> = vec![Box::new(listener)]
+            .into_iter()
+            .map(|s| s as Box<dyn CanHandleEvent>)
+            .collect();
+
+        self.event_map
+            .lock()
+            .unwrap()
+            .entry(key.to_owned())
+            .or_insert_with(Vec::new)
+            .extend(event_map);
+
+        self.listen_to_event_with_key(key);
 
         return self;
     }

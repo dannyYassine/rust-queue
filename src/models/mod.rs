@@ -7,3 +7,4 @@ pub mod event_dispatcher;
 pub mod job;
 pub mod queue;
 pub mod registry;
+pub mod resolve;
