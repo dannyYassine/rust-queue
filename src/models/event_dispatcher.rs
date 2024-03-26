@@ -38,7 +38,7 @@ impl EventDispatcher {
             event_map: Arc::new(Mutex::new(HashMap::new())),
         }
     }
-    pub fn add_event<E>(&mut self, event_map: Vec<Box<dyn CanHandleEvent>>) -> &mut Self
+    pub fn bind_event<E>(&mut self, event_map: Vec<Box<dyn CanHandleEvent>>) -> &mut Self
     where
         E: 'static + Send,
     {
@@ -56,28 +56,28 @@ impl EventDispatcher {
 
         return self;
     }
-    pub fn add_subscriber<S>(&self, subscriber: S)
+    pub fn bind_subscriber<S>(&self)
     where
-        S: Subscriber + CanHandleEvent,
+        S: Subscriber + CanHandleEvent + Default,
     {
+        let subscriber = S::default();
         let events = subscriber.get_events();
-        let event_map = vec![subscriber];
-        let event = events.first().unwrap();
 
-        self.event_map
-            .lock()
-            .unwrap()
-            .entry(event.to_owned())
-            .or_insert_with(Vec::new)
-            .extend(
-                event_map
-                    .into_iter()
-                    .map(|s| Box::new(s) as Box<dyn CanHandleEvent>),
-            );
+        for event in events {
+            let subscriber = S::default();
+            let event_map = vec![subscriber];
 
-        // for event in events {
-
-        // }
+            self.event_map
+                .lock()
+                .unwrap()
+                .entry(event.to_owned())
+                .or_insert_with(Vec::new)
+                .extend(
+                    event_map
+                        .into_iter()
+                        .map(|s| Box::new(s) as Box<dyn CanHandleEvent>),
+                );
+        }
     }
     fn listen_to_event<E>(&self)
     where

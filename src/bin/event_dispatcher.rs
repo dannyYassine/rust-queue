@@ -61,13 +61,13 @@ async fn main() {
     Application::bootstrap().await;
 
     EventDispatcher::new()
-        .add_event::<MyEvent>(vec![
+        .bind_event::<MyEvent>(vec![
             Box::new(MyListener::default()),
             Box::new(MySecondListener::default()),
         ])
-        .add_event::<MyEvent>(vec![Box::new(MyListener::default())])
-        .add_event::<MyEvent>(vec![Box::new(MySecondListener::default())])
-        .add_subscriber(MySubscriber::default());
+        .bind_event::<MyEvent>(vec![Box::new(MyListener::default())])
+        .bind_event::<MyEvent>(vec![Box::new(MySecondListener::default())])
+        .bind_subscriber::<MySubscriber>();
 
     SharedEventBus::emit(&MyEvent { data: 1 });
 }
