@@ -2,7 +2,7 @@ use std::any::Any;
 
 use rust_queue::models::{
     application::Application,
-    event_bus::SharedEventBus,
+    event_bus::{EventType, SharedEventBus},
     event_dispatcher::{CanHandleEvent, Event, EventDispatcher, Subscriber},
 };
 
@@ -21,22 +21,35 @@ struct MyOtherEvent {
 impl Event for MyOtherEvent {}
 
 #[derive(Default)]
-struct SendEmailUseCase(String);
-impl SendEmailUseCase {
+struct SendEmailUseCase;
+impl Resolvable for SendEmailUseCase {
     fn resolve() -> Self {
-        SendEmailUseCase(String::from("value"))
+        SendEmailUseCase {}
     }
+}
+impl SendEmailUseCase {
     fn execute(&self, data: i32) {
         println!("Email sent!");
     }
 }
 
+trait Resolvable {
+    fn resolve() -> Self;
+}
+
+fn resolve<S>() -> S
+where
+    S: Resolvable,
+{
+    S::resolve()
+}
+
 #[derive(Default)]
 struct MyListener();
 impl CanHandleEvent for MyListener {
-    fn handle(&self, event: Box<&dyn Any>) {
+    fn handle(&self, event: EventType) {
         if let Some(event) = event.downcast_ref::<MyEvent>() {
-            SendEmailUseCase::resolve().execute(event.data);
+            resolve::<SendEmailUseCase>().execute(event.data);
         }
     }
 }
@@ -44,7 +57,7 @@ impl CanHandleEvent for MyListener {
 #[derive(Default)]
 struct MySecondListener {}
 impl CanHandleEvent for MySecondListener {
-    fn handle(&self, event: Box<&dyn Any>) {
+    fn handle(&self, event: EventType) {
         let e = event.downcast_ref::<MyEvent>();
         println!("Hi from MySecondListener, {:?}", e);
     }
@@ -53,9 +66,10 @@ impl CanHandleEvent for MySecondListener {
 #[derive(Default)]
 struct MySubscriber {}
 impl CanHandleEvent for MySubscriber {
-    fn handle(&self, event: Box<&dyn Any>) {
+    fn handle(&self, event: EventType) {
         if let Some(event) = event.downcast_ref::<MyEvent>() {
             println!("Hi from MySubscriber MyEvent, {:?}", event);
+            resolve::<SendEmailUseCase>().execute(event.data);
         } else if let Some(event) = event.downcast_ref::<MyOtherEvent>() {
             println!("Hi from MySubscriber MyOtherEvent, {:?}", event);
         }

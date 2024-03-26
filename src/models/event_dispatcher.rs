@@ -4,7 +4,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use super::event_bus::SharedEventBus;
+use super::event_bus::{EventType, SharedEventBus};
 
 pub trait Event {
     fn name() -> String {
@@ -17,7 +17,7 @@ pub trait Event {
 }
 
 pub trait CanHandleEvent: Sync + 'static + Send {
-    fn handle(&self, event: Box<&dyn Any>) {
+    fn handle(&self, event: EventType) {
         println!("Hi from event dispatcher: {:?}", event);
     }
 }
