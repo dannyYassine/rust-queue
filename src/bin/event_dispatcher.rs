@@ -4,29 +4,51 @@ use dotenvy::dotenv;
 use rust_queue::models::{
     application::Application,
     event_bus::SharedEventBus,
-    event_dispatcher::{EventDispatcher, Listener},
+    event_dispatcher::{CanHandleEvent, Event, EventDispatcher, Listener, Subscriber},
 };
 
 #[derive(Debug)]
 struct MyEvent {
     data: i32,
 }
+impl Event for MyEvent {}
+
+#[derive(Debug)]
+struct MyOtherEvent {
+    data: i32,
+}
+impl Event for MyOtherEvent {}
 
 #[derive(Default)]
 struct MyListener {}
-impl Listener for MyListener {
+impl CanHandleEvent for MyListener {
     fn handle(&self, event: Box<&dyn Any>) {
-        let e = self.cast::<MyEvent>(&event);
+        let e = event.downcast_ref::<MyEvent>();
         println!("Hi from MyListener: {:?}", e);
+    }
+}
+impl Listener for MyListener {}
+
+#[derive(Default)]
+struct MySecondListener {}
+impl CanHandleEvent for MySecondListener {
+    fn handle(&self, event: Box<&dyn Any>) {
+        let e = event.downcast_ref::<MyEvent>();
+        println!("Hi from MySecondListener, {:?}", e);
     }
 }
 
 #[derive(Default)]
-struct MySecondListener {}
-impl Listener for MySecondListener {
+struct MySubscriber {}
+impl CanHandleEvent for MySubscriber {
     fn handle(&self, event: Box<&dyn Any>) {
-        let e = self.cast::<MyEvent>(&event);
-        println!("Hi from MySecondListener, {:?}", e);
+        let e = event.downcast_ref::<MyEvent>();
+        println!("Hi from MySubscriber, {:?}", e);
+    }
+}
+impl Subscriber for MySubscriber {
+    fn get_events(&self) -> Vec<String> {
+        return vec![MyEvent::name(), MyOtherEvent::name()];
     }
 }
 
@@ -40,7 +62,8 @@ async fn main() {
             Box::new(MySecondListener::default()),
         ])
         .add_event::<MyEvent>(vec![Box::new(MyListener::default())])
-        .add_event::<MyEvent>(vec![Box::new(MySecondListener::default())]);
+        .add_event::<MyEvent>(vec![Box::new(MySecondListener::default())])
+        .add_subscriber(Box::new(MySubscriber::default()));
 
     SharedEventBus::emit(&MyEvent { data: 1 });
 }

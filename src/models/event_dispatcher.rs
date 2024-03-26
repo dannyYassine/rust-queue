@@ -6,17 +6,30 @@ use std::{
 
 use super::event_bus::SharedEventBus;
 
-pub trait Listener: Sync + 'static + Send {
-    fn cast<E>(&self, event: &dyn Any) -> Option<&E> {
-        return event.downcast_ref::<E>();
+pub trait Event {
+    fn name() -> String {
+        return type_name::<Self>()
+            .split("::")
+            .last()
+            .unwrap_or_default()
+            .to_owned();
     }
+}
+
+pub trait CanHandleEvent: Sync + 'static + Send {
     fn handle(&self, event: Box<&dyn Any>) {
         println!("Hi from event dispatcher: {:?}", event);
     }
 }
 
+pub trait Listener: Sync + 'static + Send + CanHandleEvent {}
+
+pub trait Subscriber: CanHandleEvent + Sync + 'static + Send {
+    fn get_events(&self) -> Vec<String>;
+}
+
 pub struct EventDispatcher {
-    event_map: Arc<Mutex<HashMap<String, Vec<Box<dyn Listener>>>>>,
+    event_map: Arc<Mutex<HashMap<String, Vec<Box<dyn CanHandleEvent>>>>>,
 }
 
 impl EventDispatcher {
@@ -25,7 +38,7 @@ impl EventDispatcher {
             event_map: Arc::new(Mutex::new(HashMap::new())),
         }
     }
-    pub fn add_event<E>(&mut self, event_map: Vec<Box<dyn Listener>>) -> &mut Self
+    pub fn add_event<E>(&mut self, event_map: Vec<Box<dyn CanHandleEvent>>) -> &mut Self
     where
         E: 'static + Send,
     {
@@ -43,7 +56,25 @@ impl EventDispatcher {
 
         return self;
     }
-    pub fn add_subscriber() {}
+    pub fn add_subscriber<S>(&self, subscriber: Box<S>)
+    where
+        S: Subscriber + CanHandleEvent,
+    {
+        let events = subscriber.get_events();
+        let event_map = vec![subscriber];
+        let event = events.first().unwrap();
+
+        self.event_map
+            .lock()
+            .unwrap()
+            .entry(event.to_owned())
+            .or_insert_with(Vec::new)
+            .extend(event_map.into_iter().map(|s| s as Box<dyn CanHandleEvent>));
+
+        // for event in events {
+
+        // }
+    }
     fn listen_to_event<E>(&self)
     where
         E: 'static + Send,
