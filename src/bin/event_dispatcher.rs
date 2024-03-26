@@ -6,7 +6,7 @@ use rust_queue::models::{
     event_dispatcher::{CanHandleEvent, Event, EventDispatcher, Listener, Subscriber},
 };
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 #[allow(dead_code)]
 struct MyEvent {
     data: i32,
@@ -21,14 +21,25 @@ struct MyOtherEvent {
 impl Event for MyOtherEvent {}
 
 #[derive(Default)]
-struct MyListener {}
-impl CanHandleEvent for MyListener {
-    fn handle(&self, event: Box<&dyn Any>) {
-        let e = event.downcast_ref::<MyEvent>();
-        println!("Hi from MyListener: {:?}", e);
+struct SendEmailUseCase(String);
+impl SendEmailUseCase {
+    fn resolve() -> Self {
+        SendEmailUseCase(String::from("value"))
+    }
+    fn execute(&self, data: i32) {
+        println!("Email sent!");
     }
 }
-impl Listener for MyListener {}
+
+#[derive(Default)]
+struct MyListener();
+impl CanHandleEvent for MyListener {
+    fn handle(&self, event: Box<&dyn Any>) {
+        if let Some(event) = event.downcast_ref::<MyEvent>() {
+            SendEmailUseCase::resolve().execute(event.data);
+        }
+    }
+}
 
 #[derive(Default)]
 struct MySecondListener {}
@@ -44,9 +55,9 @@ struct MySubscriber {}
 impl CanHandleEvent for MySubscriber {
     fn handle(&self, event: Box<&dyn Any>) {
         if let Some(event) = event.downcast_ref::<MyEvent>() {
-            println!("Hi from MySubscriber, {:?}", event);
+            println!("Hi from MySubscriber MyEvent, {:?}", event);
         } else if let Some(event) = event.downcast_ref::<MyOtherEvent>() {
-            println!("Hi from MySubscriber, {:?}", event);
+            println!("Hi from MySubscriber MyOtherEvent, {:?}", event);
         }
     }
 }
