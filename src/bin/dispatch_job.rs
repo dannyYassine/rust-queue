@@ -1,6 +1,5 @@
 use std::thread;
 
-use dotenvy::dotenv;
 use rust_queue::{
     dispatch,
     models::{application::Application, job::Job},

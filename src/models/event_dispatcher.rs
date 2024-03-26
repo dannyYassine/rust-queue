@@ -56,7 +56,7 @@ impl EventDispatcher {
 
         return self;
     }
-    pub fn add_subscriber<S>(&self, subscriber: Box<S>)
+    pub fn add_subscriber<S>(&self, subscriber: S)
     where
         S: Subscriber + CanHandleEvent,
     {
@@ -69,7 +69,11 @@ impl EventDispatcher {
             .unwrap()
             .entry(event.to_owned())
             .or_insert_with(Vec::new)
-            .extend(event_map.into_iter().map(|s| s as Box<dyn CanHandleEvent>));
+            .extend(
+                event_map
+                    .into_iter()
+                    .map(|s| Box::new(s) as Box<dyn CanHandleEvent>),
+            );
 
         // for event in events {
 

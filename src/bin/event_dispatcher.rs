@@ -1,6 +1,5 @@
-use std::{any::Any, default};
+use std::any::Any;
 
-use dotenvy::dotenv;
 use rust_queue::models::{
     application::Application,
     event_bus::SharedEventBus,
@@ -8,12 +7,14 @@ use rust_queue::models::{
 };
 
 #[derive(Debug)]
+#[allow(dead_code)]
 struct MyEvent {
     data: i32,
 }
 impl Event for MyEvent {}
 
 #[derive(Debug)]
+#[allow(dead_code)]
 struct MyOtherEvent {
     data: i32,
 }
@@ -63,7 +64,7 @@ async fn main() {
         ])
         .add_event::<MyEvent>(vec![Box::new(MyListener::default())])
         .add_event::<MyEvent>(vec![Box::new(MySecondListener::default())])
-        .add_subscriber(Box::new(MySubscriber::default()));
+        .add_subscriber(MySubscriber::default());
 
     SharedEventBus::emit(&MyEvent { data: 1 });
 }
