@@ -46,6 +46,14 @@ impl Listener for MyListener {
         MyEvent::name()
     }
 }
+impl CanHandleEvent for MyListener {
+    fn handle(&self, event: EventType) {
+        if let Some(_) = event.cast::<MyEvent>() {
+            let mut l = SHARED.data.lock().unwrap();
+            *l = true;
+        }
+    }
+}
 
 #[derive(Default)]
 struct MySubscriber {}
@@ -77,19 +85,16 @@ lazy_static! {
     };
 }
 
+fn tear_down() {
+    *SHARED.data.lock().unwrap() = false;
+}
+
+struct EventNotRegisteredToo;
+
 #[tokio::test]
 async fn it_should_bind_listener_to_trigger_handle_method() {
     set_up();
     Application::bootstrap().await;
-
-    impl CanHandleEvent for MyListener {
-        fn handle(&self, event: EventType) {
-            if let Some(_) = event.cast::<MyEvent>() {
-                let mut l = SHARED.data.lock().unwrap();
-                *l = true;
-            }
-        }
-    }
 
     EventDispatcher::new().bind_listener::<MyListener>();
 
@@ -98,12 +103,6 @@ async fn it_should_bind_listener_to_trigger_handle_method() {
     assert_eq!(*SHARED.data.lock().unwrap(), true);
 }
 
-fn tear_down() {
-    *SHARED.data.lock().unwrap() = false;
-}
-
-struct EventNotRegisteredToo;
-
 #[tokio::test]
 async fn it_should_bind_subcriber_to_trigger_handle_method() {
     set_up();
@@ -111,7 +110,7 @@ async fn it_should_bind_subcriber_to_trigger_handle_method() {
 
     EventDispatcher::new().bind_subscriber::<MySubscriber>();
 
-    SharedEventBus::emit(&EventNotRegisteredToo {});
+    SharedEventBus::emit(&MyEvent { data: 1 });
 
     assert_eq!(*SHARED.data.lock().unwrap(), true);
 

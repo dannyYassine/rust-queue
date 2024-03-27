@@ -28,6 +28,9 @@ pub trait CanHandleEvent: Sync + 'static + Send {
     fn handle(&self, event: EventType) {
         println!("Hi from event dispatcher: {:?}", event);
     }
+    fn should_queue(&self) -> bool {
+        return false;
+    }
 }
 
 pub trait Listener: Sync + 'static + Send + CanHandleEvent {
@@ -157,6 +160,11 @@ impl EventDispatcher {
 
             if let Some(listeners) = clone.lock().unwrap().get(&key) {
                 for listener in listeners {
+                    if listener.should_queue() {
+                        // dispatch!(listener);
+                        continue;
+                    }
+
                     listener.handle(EventType(Box::new(event)));
                 }
             }
