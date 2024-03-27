@@ -26,6 +26,8 @@ services:
       dockerfile: dev-env/worker.dockerfile
     command: >
       sh -c "tail -f /dev/null"
+    ports:
+      - "3000:3000"
     volumes:
       - .:/usr/src/worker
     networks:
