@@ -2,6 +2,7 @@
 macro_rules! dispatch {
     ($job:expr) => {
         use dotenvy::dotenv;
+        use rust_queue::models::job::Job;
         use rust_queue::repositories::job_repository::JobRepository;
         use std::any::type_name_of_val;
         use std::env::{self, VarError};

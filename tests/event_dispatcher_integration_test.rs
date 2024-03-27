@@ -10,6 +10,7 @@ use rust_queue::models::{
 
 mod common;
 use common::set_up;
+use serde::Serialize;
 
 #[derive(Debug, Default)]
 #[allow(dead_code)]
@@ -39,7 +40,7 @@ impl SendEmailUseCase {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug, Serialize)]
 struct MyListener();
 impl Listener for MyListener {
     fn get_event(&self) -> String {
@@ -55,7 +56,7 @@ impl CanHandleEvent for MyListener {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug, Serialize)]
 struct MySubscriber {}
 impl Subscriber for MySubscriber {
     fn get_events(&self) -> Vec<String> {

@@ -1,6 +1,9 @@
 // Trait for the method `handle`
 pub trait JobHandle: 'static {
     fn handle(&self);
+    // fn dispatch(&self) {
+    //     dispatch!(self);
+    // }
 }
 
 #[derive(Debug, Clone, sqlx::FromRow)]

@@ -1,11 +1,21 @@
-use rust_queue::models::{
-    application::Application,
-    event_bus::SharedEventBus,
-    event_dispatcher::{CanHandleEvent, Event, EventDispatcher, EventType, Listener, Subscriber},
-    resolve::{resolve, Resolvable},
-};
+use std::{thread, time::Duration};
 
-#[derive(Debug, Default)]
+use rust_queue::{
+    dispatch,
+    models::{
+        application::Application,
+        event_bus::SharedEventBus,
+        event_dispatcher::{
+            CanHandleEvent, Event, EventDispatcher, EventType, Listener, Subscriber,
+        },
+        job::JobHandle,
+        resolve::{resolve, Resolvable},
+    },
+};
+use serde::{Deserialize, Serialize};
+use tokio::{runtime::Runtime, time::sleep};
+
+#[derive(Debug, Default, Serialize, Clone, Copy)]
 #[allow(dead_code)]
 struct MyEvent {
     data: i32,
@@ -33,8 +43,10 @@ impl SendEmailUseCase {
     }
 }
 
-#[derive(Default)]
-struct MyListener();
+#[derive(Default, Debug, Serialize, Deserialize)]
+struct MyListener {
+    name: &'static str,
+}
 impl Listener for MyListener {
     fn get_event(&self) -> String {
         MyEvent::name()
@@ -43,11 +55,26 @@ impl Listener for MyListener {
 impl CanHandleEvent for MyListener {
     fn handle(&self, event: EventType) {
         if let Some(event) = event.cast::<MyEvent>() {
-            resolve::<SendEmailUseCase>().execute(event.data);
+            let e = event.clone();
+            let rt = Runtime::new().unwrap();
+            let handle = thread::spawn(move || {
+                rt.block_on(async {
+                    dispatch!(CustomJob(e));
+                });
+            });
+            handle.join().unwrap();
+            print!("Handle finished");
         }
     }
 }
-#[derive(Default)]
+#[derive(Serialize)]
+struct CustomJob(MyEvent);
+impl JobHandle for CustomJob {
+    fn handle(&self) {
+        resolve::<SendEmailUseCase>().execute(self.0.data);
+    }
+}
+#[derive(Default, Serialize)]
 struct MySecondListener {}
 impl Listener for MySecondListener {
     fn get_event(&self) -> String {
@@ -61,7 +88,7 @@ impl CanHandleEvent for MySecondListener {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug, Serialize)]
 struct MySubscriber {}
 impl Subscriber for MySubscriber {
     fn get_events(&self) -> Vec<String> {
@@ -95,4 +122,6 @@ async fn main() {
 
     SharedEventBus::emit(&MyEvent { data: 1 });
     SharedEventBus::emit(&MyOtherEvent { data: 2 });
+
+    let _ = sleep(Duration::from_secs(10));
 }

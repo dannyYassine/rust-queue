@@ -24,6 +24,19 @@ struct MultipleValueJob {
     value: i32,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct MyEvent {
+    data: i32,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct CustomJob(MyEvent);
+impl JobHandle for CustomJob {
+    fn handle(&self) {
+        println!("Executing custom job: {:?}", self.0.data);
+    }
+}
+
 #[tokio::main]
 async fn main() {
     dotenv().ok();
@@ -32,6 +45,7 @@ async fn main() {
 
     let mut queue: Queue = Queue::new()
         .register::<PrintToConsoleJob>()
-        .register::<MultipleValueJob>();
+        .register::<MultipleValueJob>()
+        .register::<CustomJob>();
     queue.listen().await;
 }

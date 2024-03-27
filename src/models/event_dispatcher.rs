@@ -1,12 +1,13 @@
 use std::{
-    any::{type_name, Any},
+    any::{type_name, Any, TypeId},
     collections::HashMap,
+    fmt::Debug,
     sync::{Arc, Mutex},
 };
 
 use super::event_bus::SharedEventBus;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct EventType<'a>(Box<&'a dyn Any>);
 impl<'a> EventType<'a> {
     pub fn cast<T: 'static>(&self) -> Option<&'a T> {
@@ -79,9 +80,10 @@ impl EventDispatcher {
     }
     pub fn bind_listener<L>(&mut self) -> &mut Self
     where
-        L: Listener + CanHandleEvent + Default,
+        L: Listener + CanHandleEvent + Default + Debug,
     {
         let listener = L::default();
+
         let key = listener.get_event();
 
         let event_map: Vec<Box<dyn CanHandleEvent>> = vec![Box::new(listener)]
@@ -102,7 +104,7 @@ impl EventDispatcher {
     }
     pub fn bind_subscriber<S>(&mut self) -> &mut Self
     where
-        S: Subscriber + CanHandleEvent + Default,
+        S: Subscriber + CanHandleEvent + Default + Debug,
     {
         let subscriber = S::default();
         let events = subscriber.get_events();
@@ -160,11 +162,6 @@ impl EventDispatcher {
 
             if let Some(listeners) = clone.lock().unwrap().get(&key) {
                 for listener in listeners {
-                    if listener.should_queue() {
-                        // dispatch!(listener);
-                        continue;
-                    }
-
                     listener.handle(EventType(Box::new(event)));
                 }
             }
