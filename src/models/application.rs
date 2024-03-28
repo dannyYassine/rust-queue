@@ -52,9 +52,11 @@ impl Application {
         let mut providers = self.service_providers.lock().unwrap();
         providers.push(Box::new(S::default()));
     }
-    pub fn add_route(&self, path: &str, method_router: MethodRouter) {
+    pub fn add_route(&self, path: &str, method_router: MethodRouter) -> &Self {
         let mut router = self.router.lock().unwrap();
         *router = router.clone().route(path, method_router);
+
+        return self;
     }
     pub async fn serve(&self) {
         println!("Service application at: 0.0.0.0:3000");
