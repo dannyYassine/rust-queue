@@ -23,7 +23,7 @@ impl ServiceProvider for ChildServiceProvider {
 
 #[tokio::main]
 async fn main() {
-    let application = Application::init().await;
+    let application = Application::new();
     let _ = application
         .register_root_service_provider::<RootServiceProvider>()
         .await;
