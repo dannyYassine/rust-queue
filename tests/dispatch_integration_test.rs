@@ -1,9 +1,6 @@
 use rust_queue::{
     dispatch,
-    models::{
-        application::Application,
-        job::{Job, JobStatus},
-    },
+    models::{application::Application, job::JobStatus},
 };
 
 mod common;

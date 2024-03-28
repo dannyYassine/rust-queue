@@ -1,4 +1,4 @@
-use std::env::{self, VarError};
+use std::env::{self};
 
 use sqlx::{postgres::PgPoolOptions, PgPool};
 

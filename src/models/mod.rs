@@ -8,3 +8,4 @@ pub mod job;
 pub mod queue;
 pub mod registry;
 pub mod resolve;
+pub mod service_providers;

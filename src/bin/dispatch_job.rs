@@ -1,9 +1,6 @@
 use std::thread;
 
-use rust_queue::{
-    dispatch,
-    models::{application::Application, job::Job},
-};
+use rust_queue::{dispatch, models::application::Application};
 use serde::{Deserialize, Serialize};
 use tokio::runtime::Runtime;
 

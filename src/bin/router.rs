@@ -22,6 +22,3 @@ async fn root() -> &'static str {
 async fn json() -> Json<Value> {
     return Json(json!({"data": Duration::from_secs(1)}));
 }
-async fn get_foo() {}
-async fn post_foo() {}
-async fn foo_bar() {}
