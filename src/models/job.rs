@@ -1,3 +1,5 @@
+use serde::Serialize;
+
 // Trait for the method `handle`
 pub trait JobHandle: 'static {
     fn handle(&self);
@@ -6,7 +8,7 @@ pub trait JobHandle: 'static {
     // }
 }
 
-#[derive(Debug, Clone, sqlx::FromRow)]
+#[derive(Debug, Clone, sqlx::FromRow, Serialize)]
 pub struct Job {
     pub id: i32,
     pub payload: String,

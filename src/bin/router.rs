@@ -1,28 +1,61 @@
-use std::time::Duration;
-
-use axum::Json;
-use rust_queue::models::{
-    application::Application,
-    router::{Controller, Route, Router},
+use rust_queue::{
+    models::{
+        application::Application,
+        job::Job,
+        router::{Controller, Route, Router},
+    },
+    repositories::job_repository::JobRepository,
 };
-use serde_json::{json, Value};
+use serde::Serialize;
+
+#[derive(Serialize)]
+struct Data(&'static str);
 
 #[derive(Default)]
 struct RootController;
 impl Controller for RootController {
-    fn execute(&self) -> Json<Value> {
-        return Json(json!({"data": Duration::from_secs(1)}));
+    type ReturnType = Data;
+
+    fn execute(&self) -> Self::ReturnType {
+        return Data("hello");
     }
 }
+#[derive(Default)]
+struct AdminRootController;
+impl Controller for AdminRootController {
+    type ReturnType = Data;
+
+    fn execute(&self) -> Self::ReturnType {
+        return Data("admin");
+    }
+}
+
+// #[derive(Default)]
+// struct GetJobsController;
+// impl Controller for GetJobsController {
+//     type ReturnType = Vec<Job>;
+
+//     fn execute(&self) -> Self::ReturnType {
+//         let jobs = JobRepository::new().get_all_jobs(None).await.unwrap();
+
+//         return jobs;
+//     }
+// }
 
 struct ApiRouter;
 impl Router for ApiRouter {
     fn register_routes() {
         Route::get::<RootController>("/");
-        Route::get::<RootController>("/json");
+        Route::get::<RootController>("/jobs");
         Route::post::<RootController>("/json");
         Route::put::<RootController>("/json");
         Route::delete::<RootController>("/json");
+
+        Route::group("/admin", || {
+            Route::get::<AdminRootController>("/");
+        });
+
+        Route::get::<RootController>("/data");
     }
 }
 

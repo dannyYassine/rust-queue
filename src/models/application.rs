@@ -13,6 +13,7 @@ use super::{
 pub struct Application {
     service_providers: Arc<Mutex<Vec<Box<dyn ServiceProvider>>>>,
     router: Arc<Mutex<Router>>,
+    grouped_route_path: Arc<Mutex<String>>,
 }
 
 impl Application {
@@ -20,6 +21,7 @@ impl Application {
         Application {
             service_providers: Arc::new(Mutex::new(vec![])),
             router: Arc::new(Mutex::new(Router::new())),
+            grouped_route_path: Arc::new(Mutex::new(String::new())),
         }
     }
     pub async fn register_root_service_provider<S>(&self) -> &Self
@@ -52,9 +54,19 @@ impl Application {
         let mut providers = self.service_providers.lock().unwrap();
         providers.push(Box::new(S::default()));
     }
+    pub fn is_grouping_route(&self, path: String) {
+        let mut router = self.grouped_route_path.lock().unwrap();
+        *router = path;
+    }
+    pub fn reset_is_grouping_route(&self) {
+        let mut router = self.grouped_route_path.lock().unwrap();
+        *router = String::from("");
+    }
     pub fn add_route(&self, path: &str, method_router: MethodRouter) -> &Self {
+        let grouped_route_path = self.grouped_route_path.lock().unwrap();
+        let new_path = format!("{}{}", grouped_route_path, path);
         let mut router = self.router.lock().unwrap();
-        *router = router.clone().route(path, method_router);
+        *router = router.clone().route(&new_path, method_router);
 
         return self;
     }
