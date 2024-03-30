@@ -1,4 +1,7 @@
-use std::sync::{Arc, Mutex};
+use std::{
+    env,
+    sync::{Arc, Mutex},
+};
 
 use axum::{routing::MethodRouter, Router};
 use dotenvy::dotenv;
@@ -71,9 +74,14 @@ impl Application {
         return self;
     }
     pub async fn serve(&self) {
-        println!("Service application at: 0.0.0.0:3000");
+        let host: String = env::var("HTTP_SERVER_HOST").unwrap();
+        let port: String = env::var("HTTP_SERVER_PORT").unwrap();
+
+        println!("Service application at: {}:{}", &host, &port);
         let app = self.router.lock().unwrap().clone();
-        let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+        let listener = tokio::net::TcpListener::bind(format!("{}:{}", host, port).as_str())
+            .await
+            .unwrap();
         axum::serve(listener, app).await.unwrap();
     }
     pub fn register_routes<R>(&self) -> &Self
