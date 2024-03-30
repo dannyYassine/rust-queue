@@ -7,7 +7,6 @@ use sqlx::PgPool;
 pub struct AppState {
     pub connection: Option<PgPool>,
 }
-
 impl AppState {
     pub fn new(connection: PgPool) -> Self {
         AppState {
@@ -31,6 +30,10 @@ lazy_static! {
 impl AppStateManager {
     pub fn get_instance() -> &'static Self {
         &APP_STATE_MANAGER
+    }
+
+    pub fn state(&self) -> Arc<Mutex<AppState>> {
+        return Arc::clone(&self.state);
     }
 
     pub fn get_state(&self) -> MutexGuard<'_, AppState> {

@@ -5,6 +5,7 @@ use crate::models::{
     job::{Job, JobStatus},
 };
 
+#[derive(Default)]
 pub struct JobRepository {}
 
 #[allow(dead_code)]
@@ -70,10 +71,21 @@ impl JobRepository {
         return Some((result.unwrap(), tx));
     }
     pub async fn get_all_jobs(&self, job_status: Option<JobStatus>) -> Option<Vec<Job>> {
-        let state = AppStateManager::get_instance().get_state();
-        let connection = state.connection.as_ref().unwrap();
-        let mut tx = connection.begin().await.unwrap();
+        // let state = AppStateManager::get_instance().state();
+        // let app_state = state.lock().unwrap();
+        // let connection = app_state.connection.as_ref().unwrap();
+        // let mut tx = connection.begin().await.unwrap();
 
+        let connection = {
+            let state = AppStateManager::get_instance().state();
+            let app_state = state.lock().unwrap(); // Lock the mutex
+
+            // Clone the connection to ensure it can be moved to the async block
+            let connection = app_state.connection.as_ref().unwrap().clone();
+
+            connection
+        };
+        let mut tx = connection.begin().await.unwrap();
         let status = match job_status {
             Some(status) => status,
             _ => JobStatus::Pending,

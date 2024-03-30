@@ -1,8 +1,11 @@
+use std::default;
+
 use async_trait::async_trait;
 use rust_queue::{
     models::{
+        app_state::AppStateManager,
         application::Application,
-        job::Job,
+        job::{Job, JobStatus},
         router::{Controller, Route, Router},
     },
     repositories::job_repository::JobRepository,
@@ -12,15 +15,29 @@ use serde::Serialize;
 #[derive(Serialize)]
 struct Data(&'static str);
 
+#[derive(Serialize)]
+struct User {
+    name: String,
+    email: String,
+}
+
 #[derive(Default)]
 struct RootController;
-
 #[async_trait]
 impl Controller for RootController {
-    type ReturnType = Data;
+    type ReturnType = User;
 
     async fn execute(&self) -> Self::ReturnType {
-        return Data("hello");
+        return self.get_user().await;
+    }
+}
+
+impl RootController {
+    async fn get_user(&self) -> User {
+        return User {
+            name: String::from("Danny"),
+            email: String::from("yo@gmail.com"),
+        };
     }
 }
 #[derive(Default)]
@@ -34,37 +51,63 @@ impl Controller for AdminRootController {
     }
 }
 
-// #[derive(Default)]
-// struct GetJobsController;
-// impl Controller for GetJobsController {
-//     type ReturnType = Vec<Job>;
+#[derive(Default)]
+struct GetJobsController {
+    job_repository: JobRepository,
+}
+impl GetJobsController {
+    pub fn default() -> Self {
+        GetJobsController {
+            job_repository: JobRepository::default(),
+        }
+    }
+}
+#[async_trait]
+impl Controller for GetJobsController {
+    type ReturnType = Vec<Job>;
 
-//     fn execute(&self) -> Self::ReturnType {
-//         let jobs = JobRepository::new().get_all_jobs(None).await.unwrap();
+    async fn execute(&self) -> Self::ReturnType {
+        let results = self
+            .job_repository
+            .get_all_jobs(Some(JobStatus::Pending))
+            .await;
 
-//         return jobs;
-//     }
-// }
+        match results {
+            Some(jobs) => jobs,
+            None => vec![],
+        }
+    }
+}
+
+#[derive(Default)]
+struct GetHealthController;
+#[async_trait]
+impl Controller for GetHealthController {
+    type ReturnType = String;
+
+    async fn execute(&self) -> Self::ReturnType {
+        return "Alive".to_owned();
+    }
+}
 
 struct ApiRouter;
 impl Router for ApiRouter {
     fn register_routes() {
         Route::get::<RootController>("/");
-        Route::get::<RootController>("/jobs");
-        Route::post::<RootController>("/json");
-        Route::put::<RootController>("/json");
-        Route::delete::<RootController>("/json");
+        Route::get::<GetJobsController>("/jobs");
 
         Route::group("/admin", || {
             Route::get::<AdminRootController>("/");
         });
 
-        Route::get::<RootController>("/data");
+        Route::get::<GetHealthController>("/health");
     }
 }
 
 #[tokio::main]
 async fn main() {
+    Application::bootstrap().await;
+
     Application::shared()
         .register_routes::<ApiRouter>()
         .serve()
