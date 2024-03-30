@@ -5,11 +5,13 @@ use sqlx::PgPool;
 
 #[derive(Debug)]
 pub struct AppState {
+    pub counter: u32,
     pub connection: Option<PgPool>,
 }
 impl AppState {
     pub fn new(connection: PgPool) -> Self {
         AppState {
+            counter: 0,
             connection: Some(connection),
         }
     }
@@ -22,13 +24,20 @@ pub struct AppStateManager {
 lazy_static! {
     static ref APP_STATE_MANAGER: AppStateManager = {
         AppStateManager {
-            state: Arc::new(Mutex::new(AppState { connection: None })),
+            state: Arc::new(Mutex::new(AppState {
+                counter: 0,
+                connection: None,
+            })),
         }
     };
 }
 
 impl AppStateManager {
     pub fn get_instance() -> &'static Self {
+        &APP_STATE_MANAGER
+    }
+
+    pub fn shared() -> &'static Self {
         &APP_STATE_MANAGER
     }
 

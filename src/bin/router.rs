@@ -1,6 +1,11 @@
 use std::default;
 
 use async_trait::async_trait;
+use axum::{
+    body::Body,
+    extract::{Query, Request},
+    http::request,
+};
 use rust_queue::{
     models::{
         app_state::AppStateManager,
@@ -27,7 +32,7 @@ struct RootController;
 impl Controller for RootController {
     type ReturnType = User;
 
-    async fn execute(&self) -> Self::ReturnType {
+    async fn execute(&self, request: Request<Body>) -> Self::ReturnType {
         return self.get_user().await;
     }
 }
@@ -46,7 +51,7 @@ struct AdminRootController;
 impl Controller for AdminRootController {
     type ReturnType = Data;
 
-    async fn execute(&self) -> Self::ReturnType {
+    async fn execute(&self, _: Request<Body>) -> Self::ReturnType {
         return Data("admin");
     }
 }
@@ -66,7 +71,7 @@ impl GetJobsController {
 impl Controller for GetJobsController {
     type ReturnType = Vec<Job>;
 
-    async fn execute(&self) -> Self::ReturnType {
+    async fn execute(&self, _: Request<Body>) -> Self::ReturnType {
         let results = self
             .job_repository
             .get_all_jobs(Some(JobStatus::Pending))
@@ -85,8 +90,17 @@ struct GetHealthController;
 impl Controller for GetHealthController {
     type ReturnType = String;
 
-    async fn execute(&self) -> Self::ReturnType {
-        return "Alive".to_owned();
+    async fn execute(&self, _: Request<Body>) -> Self::ReturnType {
+        {
+            let mut state = AppStateManager::shared().get_state();
+            state.counter += 1;
+        }
+
+        return format!(
+            "{}, and count is {}",
+            "Alive".to_owned(),
+            AppStateManager::shared().get_state().counter
+        );
     }
 }
 

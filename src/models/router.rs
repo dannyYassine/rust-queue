@@ -1,5 +1,7 @@
 use async_trait::async_trait;
 use axum::{
+    body::Body,
+    extract::Request,
     routing::{delete, get, head, options, patch, post, put, trace},
     Json,
 };
@@ -12,7 +14,7 @@ use super::application::Application;
 pub trait Controller: Default + Send {
     type ReturnType: Serialize + Send;
 
-    async fn execute(&self) -> Self::ReturnType;
+    async fn execute(&self, request: Request<Body>) -> Self::ReturnType;
 }
 
 pub trait Router {
@@ -77,14 +79,15 @@ impl Route {
     }
 }
 
-fn execute<C>() -> Pin<Box<dyn Future<Output = Json<C::ReturnType>> + Send>>
+fn execute<C>(request: Request<Body>) -> Pin<Box<dyn Future<Output = Json<C::ReturnType>> + Send>>
 where
     C: Controller + 'static,
 {
+    println!("{:?}", request);
     // Create a future that resolves to a JSON value representing the data
     let future = async {
         let controller = C::default();
-        Json(controller.execute().await)
+        Json(controller.execute(request).await)
     };
 
     Box::pin(future)

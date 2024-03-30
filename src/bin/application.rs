@@ -1,4 +1,6 @@
-use rust_queue::models::{application::Application, service_providers::ServiceProvider};
+use rust_queue::models::{
+    application::Application, router::Route, service_providers::ServiceProvider,
+};
 
 #[derive(Default)]
 struct RootServiceProvider;
