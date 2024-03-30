@@ -106,10 +106,11 @@ impl Router for ApiRouter {
 
 #[tokio::main]
 async fn main() {
-    Application::bootstrap().await;
-
     Application::shared()
+        .initialize()
+        .await
         .register_routes::<ApiRouter>()
+        .await
         .serve()
         .await;
 }

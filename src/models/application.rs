@@ -27,6 +27,12 @@ impl Application {
             grouped_route_path: Arc::new(Mutex::new(String::new())),
         }
     }
+    pub async fn initialize(&self) -> &Self {
+        Self::load_env_vars().await;
+        Self::set_up_database_connection().await;
+
+        return self;
+    }
     pub async fn register_root_service_provider<S>(&self) -> &Self
     where
         S: ServiceProvider + Default,
@@ -84,7 +90,7 @@ impl Application {
             .unwrap();
         axum::serve(listener, app).await.unwrap();
     }
-    pub fn register_routes<R>(&self) -> &Self
+    pub async fn register_routes<R>(&self) -> &Self
     where
         R: CrateRouter,
     {
