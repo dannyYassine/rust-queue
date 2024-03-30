@@ -1,17 +1,18 @@
-use std::{future::Future, pin::Pin};
-
+use async_trait::async_trait;
 use axum::{
     routing::{delete, get, head, options, patch, post, put, trace},
     Json,
 };
 use serde::Serialize;
+use std::{future::Future, pin::Pin};
 
 use super::application::Application;
 
+#[async_trait]
 pub trait Controller: Default + Send {
     type ReturnType: Serialize + Send;
 
-    fn execute(&self) -> Self::ReturnType;
+    async fn execute(&self) -> Self::ReturnType;
 }
 
 pub trait Router {
@@ -83,7 +84,7 @@ where
     // Create a future that resolves to a JSON value representing the data
     let future = async {
         let controller = C::default();
-        Json(controller.execute())
+        Json(controller.execute().await)
     };
 
     Box::pin(future)

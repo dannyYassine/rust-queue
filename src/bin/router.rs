@@ -1,3 +1,4 @@
+use async_trait::async_trait;
 use rust_queue::{
     models::{
         application::Application,
@@ -13,19 +14,22 @@ struct Data(&'static str);
 
 #[derive(Default)]
 struct RootController;
+
+#[async_trait]
 impl Controller for RootController {
     type ReturnType = Data;
 
-    fn execute(&self) -> Self::ReturnType {
+    async fn execute(&self) -> Self::ReturnType {
         return Data("hello");
     }
 }
 #[derive(Default)]
 struct AdminRootController;
+#[async_trait]
 impl Controller for AdminRootController {
     type ReturnType = Data;
 
-    fn execute(&self) -> Self::ReturnType {
+    async fn execute(&self) -> Self::ReturnType {
         return Data("admin");
     }
 }
