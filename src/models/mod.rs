@@ -10,3 +10,4 @@ pub mod registry;
 pub mod resolve;
 pub mod router;
 pub mod service_providers;
+pub mod type_map;
