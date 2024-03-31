@@ -11,4 +11,5 @@ pub mod request;
 pub mod resolve;
 pub mod router;
 pub mod service_providers;
+pub mod template;
 pub mod type_map;
