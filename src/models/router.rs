@@ -12,6 +12,7 @@ use super::application::Application;
 
 #[async_trait]
 pub trait Controller: Default + Send {
+    type RequestType<T>;
     type ReturnType: Serialize + Send;
 
     async fn execute(&self, request: Request<Body>) -> Self::ReturnType;
@@ -83,7 +84,6 @@ fn execute<C>(request: Request<Body>) -> Pin<Box<dyn Future<Output = Json<C::Ret
 where
     C: Controller + 'static,
 {
-    println!("{:?}", request);
     // Create a future that resolves to a JSON value representing the data
     let future = async {
         let controller = C::default();

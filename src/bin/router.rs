@@ -5,22 +5,27 @@ use axum::{
     body::Body,
     extract::{Query, Request},
     http::request,
+    Json,
 };
+use serde::Deserialize;
+
 use rust_queue::{
     models::{
         app_state::AppStateManager,
         application::Application,
         job::{Job, JobStatus},
+        request::Request as NewRequest,
         router::{Controller, Route, Router},
     },
     repositories::job_repository::JobRepository,
 };
 use serde::Serialize;
+use serde_json::from_str;
 
 #[derive(Serialize)]
 struct Data(&'static str);
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct User {
     name: String,
     email: String,
@@ -30,10 +35,25 @@ struct User {
 struct RootController;
 #[async_trait]
 impl Controller for RootController {
-    type ReturnType = User;
+    type RequestType<T> = Json<User>;
+    type ReturnType = Vec<User>;
 
     async fn execute(&self, request: Request<Body>) -> Self::ReturnType {
-        return self.get_user().await;
+        let uri = request.uri().clone();
+
+        let req = NewRequest(request);
+
+        let query_params = req.get_query_params();
+        println!("{:?}", query_params.get::<String>("name"));
+        println!("{:?}", req.get_query_params());
+
+        // Parse the query parameters from the URI
+        let query_params = uri.query().unwrap_or("");
+        let query_params = query_params.split("::").last().unwrap();
+
+        let params: User = serde_qs::from_str(query_params).unwrap();
+
+        return vec![params, self.get_user().await];
     }
 }
 
@@ -49,6 +69,7 @@ impl RootController {
 struct AdminRootController;
 #[async_trait]
 impl Controller for AdminRootController {
+    type RequestType<T> = Json<String>;
     type ReturnType = Data;
 
     async fn execute(&self, _: Request<Body>) -> Self::ReturnType {
@@ -69,6 +90,7 @@ impl GetJobsController {
 }
 #[async_trait]
 impl Controller for GetJobsController {
+    type RequestType<T> = Json<String>;
     type ReturnType = Vec<Job>;
 
     async fn execute(&self, _: Request<Body>) -> Self::ReturnType {
@@ -88,6 +110,7 @@ impl Controller for GetJobsController {
 struct GetHealthController;
 #[async_trait]
 impl Controller for GetHealthController {
+    type RequestType<T> = Json<String>;
     type ReturnType = String;
 
     async fn execute(&self, _: Request<Body>) -> Self::ReturnType {

@@ -7,6 +7,7 @@ pub mod event_dispatcher;
 pub mod job;
 pub mod queue;
 pub mod registry;
+pub mod request;
 pub mod resolve;
 pub mod router;
 pub mod service_providers;
