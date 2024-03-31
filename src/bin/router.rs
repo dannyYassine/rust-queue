@@ -1,7 +1,5 @@
-use std::default;
-
 use async_trait::async_trait;
-use axum::{body::Body, extract::Query, http::request, Json};
+use axum::Json;
 use serde::Deserialize;
 
 use rust_queue::{
@@ -15,7 +13,6 @@ use rust_queue::{
     repositories::job_repository::JobRepository,
 };
 use serde::Serialize;
-use serde_json::from_str;
 
 #[derive(Serialize)]
 struct Data(&'static str);
