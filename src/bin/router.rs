@@ -9,6 +9,7 @@ use rust_queue::{
         job::{Job, JobStatus},
         request::Request,
         router::{Controller, Route, Router},
+        template::Template,
     },
     repositories::job_repository::JobRepository,
 };

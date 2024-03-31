@@ -25,7 +25,7 @@ impl Template {
     pub fn shared() -> &'static Tera {
         &TEMPLATES
     }
-    fn render<T>(template: &str, data: T) -> String
+    pub fn render<T>(template: &str, data: T) -> String
     where
         T: Serialize,
     {
