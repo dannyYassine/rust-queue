@@ -1,21 +1,21 @@
 use async_trait::async_trait;
 use axum::{
     body::Body,
-    extract::Request,
+    extract::Request as AxumRequest,
     routing::{delete, get, head, options, patch, post, put, trace},
     Json,
 };
 use serde::Serialize;
 use std::{future::Future, pin::Pin};
 
-use super::application::Application;
+use super::{application::Application, request::Request};
 
 #[async_trait]
 pub trait Controller: Default + Send {
     type RequestType<T>;
     type ReturnType: Serialize + Send;
 
-    async fn execute(&self, request: Request<Body>) -> Self::ReturnType;
+    async fn execute(&self, request: Request) -> Self::ReturnType;
 }
 
 pub trait Router {
@@ -80,14 +80,16 @@ impl Route {
     }
 }
 
-fn execute<C>(request: Request<Body>) -> Pin<Box<dyn Future<Output = Json<C::ReturnType>> + Send>>
+fn execute<C>(
+    request: AxumRequest<Body>,
+) -> Pin<Box<dyn Future<Output = Json<C::ReturnType>> + Send>>
 where
     C: Controller + 'static,
 {
     // Create a future that resolves to a JSON value representing the data
     let future = async {
         let controller = C::default();
-        Json(controller.execute(request).await)
+        Json(controller.execute(Request(request)).await)
     };
 
     Box::pin(future)

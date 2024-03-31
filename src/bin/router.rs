@@ -1,12 +1,7 @@
 use std::default;
 
 use async_trait::async_trait;
-use axum::{
-    body::Body,
-    extract::{Query, Request},
-    http::request,
-    Json,
-};
+use axum::{body::Body, extract::Query, http::request, Json};
 use serde::Deserialize;
 
 use rust_queue::{
@@ -14,7 +9,7 @@ use rust_queue::{
         app_state::AppStateManager,
         application::Application,
         job::{Job, JobStatus},
-        request::Request as NewRequest,
+        request::Request,
         router::{Controller, Route, Router},
     },
     repositories::job_repository::JobRepository,
@@ -38,20 +33,12 @@ impl Controller for RootController {
     type RequestType<T> = Json<User>;
     type ReturnType = Vec<User>;
 
-    async fn execute(&self, request: Request<Body>) -> Self::ReturnType {
-        let uri = request.uri().clone();
-
-        let req = NewRequest(request);
-
-        let query_params = req.get_query_params();
+    async fn execute(&self, request: Request) -> Self::ReturnType {
+        let query_params = request.get_query_params();
         println!("{:?}", query_params.get::<String>("name"));
-        println!("{:?}", req.get_query_params());
+        println!("{:?}", request.get_query_params());
 
-        // Parse the query parameters from the URI
-        let query_params = uri.query().unwrap_or("");
-        let query_params = query_params.split("::").last().unwrap();
-
-        let params: User = serde_qs::from_str(query_params).unwrap();
+        let params: User = request.parse_into::<User>();
 
         return vec![params, self.get_user().await];
     }
@@ -72,7 +59,7 @@ impl Controller for AdminRootController {
     type RequestType<T> = Json<String>;
     type ReturnType = Data;
 
-    async fn execute(&self, _: Request<Body>) -> Self::ReturnType {
+    async fn execute(&self, _: Request) -> Self::ReturnType {
         return Data("admin");
     }
 }
@@ -93,7 +80,7 @@ impl Controller for GetJobsController {
     type RequestType<T> = Json<String>;
     type ReturnType = Vec<Job>;
 
-    async fn execute(&self, _: Request<Body>) -> Self::ReturnType {
+    async fn execute(&self, _: Request) -> Self::ReturnType {
         let results = self
             .job_repository
             .get_all_jobs(Some(JobStatus::Pending))
@@ -113,7 +100,7 @@ impl Controller for GetHealthController {
     type RequestType<T> = Json<String>;
     type ReturnType = String;
 
-    async fn execute(&self, _: Request<Body>) -> Self::ReturnType {
+    async fn execute(&self, _: Request) -> Self::ReturnType {
         {
             let mut state = AppStateManager::shared().get_state();
             state.counter += 1;

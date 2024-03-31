@@ -45,4 +45,17 @@ impl Request {
 
         return params;
     }
+    pub fn parse_into<T>(&self) -> T
+    where
+        T: for<'de> Deserialize<'de>,
+    {
+        let uri = self.0.uri().clone();
+
+        let query_params = uri.query().unwrap_or("");
+        let query_params = query_params.split("::").last().unwrap();
+
+        let params: T = serde_qs::from_str(query_params).unwrap();
+
+        return params;
+    }
 }
