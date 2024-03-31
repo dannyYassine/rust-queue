@@ -23,6 +23,14 @@ struct User {
     email: String,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct UserParams {
+    #[serde(default)]
+    name: String,
+    #[serde(default)]
+    email: String,
+}
+
 #[derive(Default)]
 struct RootController;
 #[async_trait]
@@ -30,7 +38,10 @@ impl Controller for RootController {
     type RequestType<T> = Json<User>;
     type ReturnType = Vec<User>;
 
-    async fn execute(&self, request: Request) -> Self::ReturnType {
+    async fn execute(&self, mut request: Request) -> Self::ReturnType {
+        let param = request.payload::<UserParams>().await;
+        println!("{:?}", param);
+
         let query_params = request.get_query_params();
         println!("{:?}", query_params.get::<String>("name"));
         println!("{:?}", request.get_query_params());
@@ -66,6 +77,7 @@ struct GetJobsController {
     job_repository: JobRepository,
 }
 impl GetJobsController {
+    #[allow(dead_code)]
     pub fn default() -> Self {
         GetJobsController {
             job_repository: JobRepository::default(),
@@ -114,7 +126,7 @@ impl Controller for GetHealthController {
 struct ApiRouter;
 impl Router for ApiRouter {
     fn register_routes() {
-        Route::get::<RootController>("/");
+        Route::post::<RootController>("/");
         Route::get::<GetJobsController>("/jobs");
 
         Route::group("/admin", || {

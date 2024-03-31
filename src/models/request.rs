@@ -1,7 +1,9 @@
 use std::{collections::HashMap, fmt::Debug, str::FromStr};
 
 use axum::{body::Body, extract::Request as AxumRequest};
+use http_body_util::BodyExt;
 use serde::Deserialize;
+use serde_json::from_str;
 
 #[derive(Debug, Deserialize)]
 pub struct QueryParams {
@@ -44,6 +46,26 @@ impl Request {
             serde_urlencoded::from_str(query_string).expect("Failed to parse query string");
 
         return params;
+    }
+    pub async fn payload<T>(&mut self) -> T
+    where
+        T: for<'de> Deserialize<'de>,
+    {
+        let body = self.0.body_mut();
+        let mut json_string = String::new();
+
+        while let Some(next) = body.frame().await {
+            let frame = next.unwrap();
+            if let Some(chunk) = frame.data_ref() {
+                let byte_slice = chunk.as_ref();
+                // Attempt to convert the byte slice into a string
+                let string = std::str::from_utf8(byte_slice).unwrap();
+
+                json_string = json_string + string;
+            }
+        }
+
+        return from_str::<T>(&json_string).unwrap();
     }
     pub fn parse_into<T>(&self) -> T
     where
