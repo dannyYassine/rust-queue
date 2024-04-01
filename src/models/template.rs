@@ -1,5 +1,3 @@
-use std::any::Any;
-
 use lazy_static::lazy_static;
 use serde::Serialize;
 use tera::{Context, Tera};
