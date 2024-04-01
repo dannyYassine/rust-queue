@@ -4,11 +4,11 @@ use serde::Deserialize;
 
 use rust_queue::{
     models::{
-        app_state::{AppState, AppStateManager},
+        app_state::AppStateManager,
         application::Application,
         job::{Job, JobStatus},
         request::Request,
-        router::{Controller, HtmlController, HtmlString, Route, Router},
+        router::{Controller, Route, Router},
         template::Template,
     },
     repositories::job_repository::JobRepository,
@@ -36,7 +36,7 @@ struct UserParams {
 struct RootController;
 #[async_trait]
 impl Controller for RootController {
-    type ReturnType = Vec<User>;
+    type ReturnType = Json<Vec<User>>;
 
     async fn execute(&self, mut request: Request) -> Self::ReturnType {
         let param = request.payload::<UserParams>().await;
@@ -48,7 +48,7 @@ impl Controller for RootController {
 
         let params: User = request.parse_into::<User>();
 
-        return vec![params, self.get_user().await];
+        return Json(vec![params, self.get_user().await]);
     }
 }
 
@@ -64,10 +64,10 @@ impl RootController {
 struct AdminRootController;
 #[async_trait]
 impl Controller for AdminRootController {
-    type ReturnType = Data;
+    type ReturnType = Json<Data>;
 
     async fn execute(&self, _: Request) -> Self::ReturnType {
-        return Data("admin");
+        return Json(Data("admin"));
     }
 }
 
@@ -85,7 +85,7 @@ impl GetJobsController {
 }
 #[async_trait]
 impl Controller for GetJobsController {
-    type ReturnType = Vec<Job>;
+    type ReturnType = Json<Vec<Job>>;
 
     async fn execute(&self, _: Request) -> Self::ReturnType {
         let results = self
@@ -94,8 +94,8 @@ impl Controller for GetJobsController {
             .await;
 
         match results {
-            Some(jobs) => jobs,
-            None => vec![],
+            Some(jobs) => Json(jobs),
+            None => Json(vec![]),
         }
     }
 }
@@ -128,19 +128,21 @@ struct RenderHtmlData {
 #[derive(Default)]
 struct RenderHtmlController;
 #[async_trait]
-impl HtmlController for RenderHtmlController {
-    async fn execute(&self, _: Request) -> HtmlString {
+impl Controller for RenderHtmlController {
+    type ReturnType = Html<String>;
+
+    async fn execute(&self, _: Request) -> Self::ReturnType {
         {
             let mut state = AppStateManager::shared().get_state();
             state.counter += 1;
         }
 
-        return Template::render::<RenderHtmlData>(
+        return Html(Template::render::<RenderHtmlData>(
             "index.html",
             RenderHtmlData {
                 count: AppStateManager::shared().get_state().counter,
             },
-        );
+        ));
     }
 }
 
@@ -155,7 +157,7 @@ impl Router for ApiRouter {
         });
 
         Route::get::<GetHealthController>("/health");
-        Route::html::<RenderHtmlController>("/html");
+        Route::get::<RenderHtmlController>("/html");
     }
 }
 
