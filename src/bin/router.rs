@@ -1,14 +1,14 @@
 use async_trait::async_trait;
-use axum::Json;
+use axum::{response::Html, Json};
 use serde::Deserialize;
 
 use rust_queue::{
     models::{
-        app_state::AppStateManager,
+        app_state::{AppState, AppStateManager},
         application::Application,
         job::{Job, JobStatus},
         request::Request,
-        router::{Controller, Route, Router},
+        router::{Controller, HtmlController, Route, Router},
         template::Template,
     },
     repositories::job_repository::JobRepository,
@@ -36,7 +36,6 @@ struct UserParams {
 struct RootController;
 #[async_trait]
 impl Controller for RootController {
-    type RequestType<T> = Json<User>;
     type ReturnType = Vec<User>;
 
     async fn execute(&self, mut request: Request) -> Self::ReturnType {
@@ -65,7 +64,6 @@ impl RootController {
 struct AdminRootController;
 #[async_trait]
 impl Controller for AdminRootController {
-    type RequestType<T> = Json<String>;
     type ReturnType = Data;
 
     async fn execute(&self, _: Request) -> Self::ReturnType {
@@ -87,7 +85,6 @@ impl GetJobsController {
 }
 #[async_trait]
 impl Controller for GetJobsController {
-    type RequestType<T> = Json<String>;
     type ReturnType = Vec<Job>;
 
     async fn execute(&self, _: Request) -> Self::ReturnType {
@@ -107,7 +104,6 @@ impl Controller for GetJobsController {
 struct GetHealthController;
 #[async_trait]
 impl Controller for GetHealthController {
-    type RequestType<T> = Json<String>;
     type ReturnType = String;
 
     async fn execute(&self, _: Request) -> Self::ReturnType {
@@ -124,6 +120,30 @@ impl Controller for GetHealthController {
     }
 }
 
+#[derive(Serialize)]
+struct RenderHtmlData {
+    count: u32,
+}
+
+#[derive(Default)]
+struct RenderHtmlController;
+#[async_trait]
+impl HtmlController for RenderHtmlController {
+    async fn execute(&self, _: Request) -> String {
+        {
+            let mut state = AppStateManager::shared().get_state();
+            state.counter += 1;
+        }
+
+        return Template::render::<RenderHtmlData>(
+            "index.html",
+            RenderHtmlData {
+                count: AppStateManager::shared().get_state().counter,
+            },
+        );
+    }
+}
+
 struct ApiRouter;
 impl Router for ApiRouter {
     fn register_routes() {
@@ -135,6 +155,7 @@ impl Router for ApiRouter {
         });
 
         Route::get::<GetHealthController>("/health");
+        Route::html::<RenderHtmlController>("/html");
     }
 }
 

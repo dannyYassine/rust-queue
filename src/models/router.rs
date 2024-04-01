@@ -2,6 +2,7 @@ use async_trait::async_trait;
 use axum::{
     body::Body,
     extract::Request as AxumRequest,
+    response::Html,
     routing::{delete, get, head, options, patch, post, put, trace},
     Json,
 };
@@ -12,10 +13,14 @@ use super::{application::Application, request::Request};
 
 #[async_trait]
 pub trait Controller: Default + Send {
-    type RequestType<T>;
     type ReturnType: Serialize + Send;
 
     async fn execute(&self, request: Request) -> Self::ReturnType;
+}
+
+#[async_trait]
+pub trait HtmlController: Default + Send {
+    async fn execute(&self, request: Request) -> String;
 }
 
 pub trait Router {
@@ -24,6 +29,12 @@ pub trait Router {
 
 pub struct Route;
 impl Route {
+    pub fn html<C>(path: &str)
+    where
+        C: HtmlController + 'static,
+    {
+        Application::shared().add_route(path, get(execute_html::<C>));
+    }
     pub fn get<C>(path: &str)
     where
         C: Controller + 'static,
@@ -78,6 +89,19 @@ impl Route {
         func();
         Application::shared().reset_is_grouping_route();
     }
+}
+
+fn execute_html<C>(request: AxumRequest<Body>) -> Pin<Box<dyn Future<Output = Html<String>> + Send>>
+where
+    C: HtmlController + 'static,
+{
+    // Create a future that resolves to a JSON value representing the data
+    let future = async {
+        let controller = C::default();
+        Html(controller.execute(Request(request)).await)
+    };
+
+    Box::pin(future)
 }
 
 fn execute<C>(

@@ -6,7 +6,7 @@ use tera::{Context, Tera};
 
 lazy_static! {
     pub static ref TEMPLATES: Tera = {
-        let mut tera = match Tera::new("examples/basic/templates/**/*") {
+        let mut tera = match Tera::new("src/bin/html/**/*") {
             Ok(t) => t,
             Err(e) => {
                 println!("Parsing error(s): {}", e);
