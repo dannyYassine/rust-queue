@@ -11,7 +11,7 @@ use rust_queue::{
         request::Request,
         resource::{JsonResource, Resource, ResourceArray},
         router::{Controller, Route, Router},
-        template::{render_view, Template},
+        template::{render_view, HtmlResource, Template},
     },
     repositories::job_repository::JobRepository,
     view,
@@ -150,7 +150,7 @@ struct RenderHtmlData {
 struct RenderHtmlController;
 #[async_trait]
 impl Controller for RenderHtmlController {
-    type ReturnType = Html<String>;
+    type ReturnType = HtmlResource;
 
     async fn execute(&self, _: Request) -> Self::ReturnType {
         {

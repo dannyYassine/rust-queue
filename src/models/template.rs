@@ -3,6 +3,8 @@ use lazy_static::lazy_static;
 use serde::Serialize;
 use tera::{Context, Tera};
 
+pub type HtmlResource = Html<String>;
+
 lazy_static! {
     pub static ref TEMPLATES: Tera = {
         let mut tera = match Tera::new("src/bin/html/**/*") {
