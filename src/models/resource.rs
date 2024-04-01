@@ -1,6 +1,10 @@
-use std::{any::Any, collections::HashMap};
+use std::collections::HashMap;
 
-pub type ResourceArray = HashMap<&'static str, Box<dyn Any>>;
+use axum::Json;
+
+pub type ResourceArray = HashMap<&'static str, String>;
+
+pub type JsonResource = Json<ResourceArray>;
 
 #[macro_export]
 macro_rules! json {
@@ -8,18 +12,22 @@ macro_rules! json {
         use std::collections::HashMap;
 
         let mut map: ResourceArray = HashMap::new();
-        $(map.insert($key, Box::new($value));)*
+        $(map.insert($key, $value.to_string().to_owned());)*
 
         map
     }};
 }
 
-pub trait JsonResource<T>: Default {
+pub trait Resource<T>: Default {
     fn to_array(&self, data: T) -> ResourceArray;
-    fn make(data: T) -> ResourceArray {
-        Self::default().to_array(data)
+    fn make(data: T) -> Json<ResourceArray> {
+        Json(Self::default().to_array(data))
     }
-    fn make_collection(data: Vec<T>) -> Vec<ResourceArray> {
-        data.into_iter().map(|item| Self::make(item)).collect()
+    fn make_collection(data: Vec<T>) -> Json<Vec<ResourceArray>> {
+        Json(
+            data.into_iter()
+                .map(|item| Self::default().to_array(item))
+                .collect(),
+        )
     }
 }

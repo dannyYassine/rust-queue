@@ -2,7 +2,7 @@ use std::vec;
 
 use rust_queue::{
     json,
-    models::resource::{JsonResource, ResourceArray},
+    models::resource::{Resource, ResourceArray},
 };
 
 pub struct User {
@@ -12,7 +12,7 @@ pub struct User {
 #[derive(Default, Debug)]
 struct UserResource;
 
-impl JsonResource<User> for UserResource {
+impl Resource<User> for UserResource {
     fn to_array(&self, data: User) -> ResourceArray {
         json! {
             "name" => data.name,

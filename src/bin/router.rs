@@ -3,11 +3,13 @@ use axum::{response::Html, Json};
 use serde::Deserialize;
 
 use rust_queue::{
+    json,
     models::{
         app_state::AppStateManager,
         application::Application,
         job::{Job, JobStatus},
         request::Request,
+        resource::{JsonResource, Resource, ResourceArray},
         router::{Controller, Route, Router},
         template::Template,
     },
@@ -60,14 +62,32 @@ impl RootController {
         };
     }
 }
+
+#[derive(Default, Debug)]
+struct UserResource;
+
+impl Resource<User> for UserResource {
+    fn to_array(&self, data: User) -> ResourceArray {
+        json! {
+            "name" => data.name,
+            "count" => 1
+        }
+    }
+}
+
 #[derive(Default)]
 struct AdminRootController;
 #[async_trait]
 impl Controller for AdminRootController {
-    type ReturnType = Json<Data>;
+    type ReturnType = JsonResource;
 
     async fn execute(&self, _: Request) -> Self::ReturnType {
-        return Json(Data("admin"));
+        let user = User {
+            name: "".to_owned(),
+            email: "a".to_owned(),
+        };
+
+        return UserResource::make(user);
     }
 }
 
