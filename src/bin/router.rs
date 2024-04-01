@@ -8,7 +8,7 @@ use rust_queue::{
         application::Application,
         job::{Job, JobStatus},
         request::Request,
-        router::{Controller, HtmlController, Route, Router},
+        router::{Controller, HtmlController, HtmlString, Route, Router},
         template::Template,
     },
     repositories::job_repository::JobRepository,
@@ -129,7 +129,7 @@ struct RenderHtmlData {
 struct RenderHtmlController;
 #[async_trait]
 impl HtmlController for RenderHtmlController {
-    async fn execute(&self, _: Request) -> String {
+    async fn execute(&self, _: Request) -> HtmlString {
         {
             let mut state = AppStateManager::shared().get_state();
             state.counter += 1;

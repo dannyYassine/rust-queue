@@ -18,9 +18,11 @@ pub trait Controller: Default + Send {
     async fn execute(&self, request: Request) -> Self::ReturnType;
 }
 
+pub type HtmlString = String;
+
 #[async_trait]
 pub trait HtmlController: Default + Send {
-    async fn execute(&self, request: Request) -> String;
+    async fn execute(&self, request: Request) -> HtmlString;
 }
 
 pub trait Router {
@@ -41,6 +43,7 @@ impl Route {
     {
         Application::shared().add_route(path, get(execute::<C>));
     }
+
     pub fn post<C>(path: &str)
     where
         C: Controller + 'static,
