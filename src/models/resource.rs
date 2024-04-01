@@ -1,14 +1,14 @@
-use std::collections::HashMap;
+use std::{any::Any, collections::HashMap};
 
-pub type ResourceArray = HashMap<&'static str, String>;
+pub type ResourceArray = HashMap<&'static str, Box<dyn Any>>;
 
 #[macro_export]
 macro_rules! json {
     ($($key:expr => $value:expr),*) => {{
         use std::collections::HashMap;
 
-        let mut map = HashMap::new();
-        $(map.insert($key, $value);)*
+        let mut map: ResourceArray = HashMap::new();
+        $(map.insert($key, Box::new($value));)*
 
         map
     }};

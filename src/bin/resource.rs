@@ -15,7 +15,8 @@ struct UserResource;
 impl JsonResource<User> for UserResource {
     fn to_array(&self, data: User) -> ResourceArray {
         json! {
-            "name" => data.name
+            "name" => data.name,
+            "count" => 1
         }
     }
 }
