@@ -11,9 +11,10 @@ use rust_queue::{
         request::Request,
         resource::{JsonResource, Resource, ResourceArray},
         router::{Controller, Route, Router},
-        template::Template,
+        template::{render_view, Template},
     },
     repositories::job_repository::JobRepository,
+    view,
 };
 use serde::Serialize;
 
@@ -157,12 +158,19 @@ impl Controller for RenderHtmlController {
             state.counter += 1;
         }
 
-        return Html(Template::render::<RenderHtmlData>(
+        return view!(
             "index.html",
             RenderHtmlData {
                 count: AppStateManager::shared().get_state().counter,
-            },
-        ));
+            }
+        );
+
+        // return Html(Template::render::<RenderHtmlData>(
+        //     "index.html",
+        //     RenderHtmlData {
+        //         count: AppStateManager::shared().get_state().counter,
+        //     },
+        // ));
     }
 }
 

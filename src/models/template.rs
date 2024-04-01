@@ -1,3 +1,4 @@
+use axum::response::Html;
 use lazy_static::lazy_static;
 use serde::Serialize;
 use tera::{Context, Tera};
@@ -33,18 +34,20 @@ impl Template {
     }
 }
 
-fn render_view<T>(template: &str, data: T) -> String
-where
-    T: Serialize,
-{
-    return Template::shared()
-        .render(template, &Context::from_serialize(&data).unwrap())
-        .unwrap();
-}
-
 #[macro_export]
 macro_rules! view {
     ($template:expr, $data:expr) => {
-        render_view::<_>($template, $data)
+        rust_queue::models::template::render_view::<_>($template, $data)
     };
+}
+
+pub fn render_view<T>(template: &str, data: T) -> Html<String>
+where
+    T: Serialize,
+{
+    return Html(
+        Template::shared()
+            .render(template, &Context::from_serialize(&data).unwrap())
+            .unwrap(),
+    );
 }
