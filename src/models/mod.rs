@@ -9,6 +9,7 @@ pub mod queue;
 pub mod registry;
 pub mod request;
 pub mod resolve;
+pub mod resource;
 pub mod router;
 pub mod service_providers;
 pub mod template;
