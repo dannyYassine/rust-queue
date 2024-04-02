@@ -65,11 +65,16 @@ impl Registry {
         Arc::new(typed_value)
     }
 
-    pub fn register<J>(&self, func: JobClosure) {
+    pub fn register<J>(
+        &self,
+        func: impl Fn(&Registry) -> Box<dyn Any + Send + Sync + 'static> + Send + Sync + 'static,
+    ) where
+        J: 'static,
+    {
         let s = type_name::<J>().to_owned();
         let mut map = self.type_map.lock().unwrap();
 
-        map.insert(s, Arc::new(func));
+        map.insert(s, Arc::new(Box::new(func)));
     }
 
     pub fn clear(&self) {

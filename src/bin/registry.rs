@@ -10,6 +10,8 @@ struct MyStruct {
     another_struct: Arc<Box<AnotherStruct>>,
 }
 
+impl MyTrait for AnotherStruct {}
+
 #[derive(Clone, Debug)]
 struct AnotherStruct {
     name: String,
@@ -41,19 +43,24 @@ fn main() {
     // );
 
     // println!("{}", name);
+    // registry.register::<dyn MyTrait>(Box::new(|_| {
+    //     Box::new(AnotherStruct {
+    //         name: "DI2".to_string(),
+    //     })
+    // }));
 
-    registry.register::<AnotherStruct>(Box::new(|_| {
+    registry.register::<AnotherStruct>(|_| {
         Box::new(AnotherStruct {
             name: "DI2".to_string(),
         })
-    }));
+    });
 
-    registry.register::<MyStruct>(Box::new(|r: &Registry| {
+    registry.register::<MyStruct>(|r: &Registry| {
         Box::new(MyStruct {
             name: "DI".to_string(),
             another_struct: r.get_type::<AnotherStruct>(),
         })
-    }));
+    });
 
     let m = registry.get_type::<AnotherStruct>();
     println!("{:?}", m);
