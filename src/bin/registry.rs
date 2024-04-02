@@ -1,5 +1,8 @@
+use std::sync::Arc;
+
 use rust_queue::models::registry::{HashableRegistry, Registry};
 
+#[derive(Clone, Debug)]
 struct MyStruct {
     name: String,
 }
@@ -7,28 +10,38 @@ impl HashableRegistry for MyStruct {}
 
 fn main() {
     let registry = Registry::get_instance();
-    let st = MyStruct {
-        name: String::from("value"),
-    };
-    registry.set("My", st);
+    // let st = MyStruct {
+    //     name: String::from("value"),
+    // };
+    // registry.set("My", st);
 
-    let name = registry.get::<MyStruct, String>(
-        "My",
-        Box::new(|object: Option<&MyStruct>| {
-            let new = object.unwrap();
-            println!("{}", new.name);
+    // let name = registry.get::<MyStruct, String>(
+    //     "My",
+    //     Box::new(|object: Option<&MyStruct>| {
+    //         let new = object.unwrap();
+    //         println!("{}", new.name);
 
-            return new.name.to_owned();
-        }),
-    );
+    //         return new.name.to_owned();
+    //     }),
+    // );
 
-    registry.get::<MyStruct, _>(
-        "My",
-        Box::new(|object: Option<&MyStruct>| {
-            let new = object.unwrap();
-            println!("{}", new.name);
-        }),
-    );
+    // registry.get::<MyStruct, _>(
+    //     "My",
+    //     Box::new(|object: Option<&MyStruct>| {
+    //         let new = object.unwrap();
+    //         println!("{}", new.name);
+    //     }),
+    // );
 
-    println!("{}", name);
+    // println!("{}", name);
+
+    registry.register::<MyStruct>(Box::new(|_| {
+        Arc::new(Box::new(MyStruct {
+            name: "DI".to_string(),
+        }))
+    }));
+
+    let m = registry.get_type::<MyStruct>();
+
+    println!("{:?}", m.unwrap());
 }
