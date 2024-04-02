@@ -43,30 +43,30 @@ fn main() {
     // );
 
     // println!("{}", name);
-    // registry.register::<dyn MyTrait>(Box::new(|_| {
+    // registry.set::<dyn MyTrait>(Box::new(|_| {
     //     Box::new(AnotherStruct {
     //         name: "DI2".to_string(),
     //     })
     // }));
 
-    registry.register::<AnotherStruct>(|_| {
+    registry.set::<AnotherStruct>(|_| {
         Box::new(AnotherStruct {
             name: "DI2".to_string(),
         })
     });
 
-    registry.register::<MyStruct>(|r: &Registry| {
+    registry.set::<MyStruct>(|r: &Registry| {
         Box::new(MyStruct {
             name: "DI".to_string(),
-            another_struct: r.get_type::<AnotherStruct>(),
+            another_struct: r.get::<AnotherStruct>(),
         })
     });
 
-    let m = registry.get_type::<AnotherStruct>();
+    let m = registry.get::<AnotherStruct>();
     println!("{:?}", m);
     println!("{:?}", m.as_ref().name);
 
-    let m = registry.get_type::<MyStruct>();
+    let m = registry.get::<MyStruct>();
     println!("{:?}", m);
     println!("{:?}", m.as_ref().name);
     println!("{:?}", m.as_ref().another_struct);

@@ -1,5 +1,5 @@
 use std::{
-    any::{type_name, Any, TypeId},
+    any::{type_name, Any},
     collections::HashMap,
     sync::{Arc, Mutex},
 };
@@ -31,22 +31,7 @@ impl Registry {
         &REGISTRY
     }
 
-    pub fn set<T: Any + Send + Sync + 'static>(&self, key: &str, value: T) {
-        let mut map = self.map.lock().unwrap();
-        map.insert(key.to_string(), Box::new(value));
-    }
-
-    pub fn get<T: Any + Send + Sync>(&self, key: &str) -> Option<T>
-    where
-        T: Clone,
-    {
-        let map_clone = Arc::clone(&self.map);
-        let map = map_clone.lock().unwrap();
-
-        return downcast_ref::<T>(map.get(key).unwrap()).cloned();
-    }
-
-    pub fn get_type<T>(&self) -> Arc<Box<T>>
+    pub fn get<T>(&self) -> Arc<Box<T>>
     where
         T: Clone + Any + Send + Sync,
     {
@@ -65,7 +50,7 @@ impl Registry {
         Arc::new(typed_value)
     }
 
-    pub fn register<J>(
+    pub fn set<J>(
         &self,
         func: impl Fn(&Registry) -> Box<dyn Any + Send + Sync + 'static> + Send + Sync + 'static,
     ) where
@@ -80,13 +65,5 @@ impl Registry {
     pub fn clear(&self) {
         let mut map = self.map.lock().unwrap();
         map.clear();
-    }
-}
-
-fn downcast_ref<T: 'static>(any: &dyn Any) -> Option<&T> {
-    if any.type_id() == TypeId::of::<T>() {
-        unsafe { Some(&*(any as *const dyn Any as *const T)) }
-    } else {
-        None
     }
 }
