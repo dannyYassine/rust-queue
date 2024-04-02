@@ -1,12 +1,19 @@
-use std::sync::Arc;
+use std::{fmt::Debug, sync::Arc};
 
-use rust_queue::models::registry::{HashableRegistry, Registry};
+use rust_queue::models::registry::Registry;
+
+trait MyTrait: Debug {}
 
 #[derive(Clone, Debug)]
 struct MyStruct {
     name: String,
+    another_struct: Arc<Box<AnotherStruct>>,
 }
-impl HashableRegistry for MyStruct {}
+
+#[derive(Clone, Debug)]
+struct AnotherStruct {
+    name: String,
+}
 
 fn main() {
     let registry = Registry::get_instance();
@@ -35,13 +42,25 @@ fn main() {
 
     // println!("{}", name);
 
-    registry.register::<MyStruct>(Box::new(|_| {
-        Arc::new(Box::new(MyStruct {
-            name: "DI".to_string(),
-        }))
+    registry.register::<AnotherStruct>(Box::new(|_| {
+        Box::new(AnotherStruct {
+            name: "DI2".to_string(),
+        })
     }));
 
-    let m = registry.get_type::<MyStruct>();
+    registry.register::<MyStruct>(Box::new(|r: &Registry| {
+        Box::new(MyStruct {
+            name: "DI".to_string(),
+            another_struct: r.get_type::<AnotherStruct>(),
+        })
+    }));
 
-    println!("{:?}", m.unwrap());
+    let m = registry.get_type::<AnotherStruct>();
+    println!("{:?}", m);
+    println!("{:?}", m.as_ref().name);
+
+    let m = registry.get_type::<MyStruct>();
+    println!("{:?}", m);
+    println!("{:?}", m.as_ref().name);
+    println!("{:?}", m.as_ref().another_struct);
 }

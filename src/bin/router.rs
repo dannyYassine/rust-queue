@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use axum::{response::Html, Json};
+use axum::Json;
 use serde::Deserialize;
 
 use rust_queue::{
@@ -11,7 +11,7 @@ use rust_queue::{
         request::Request,
         resource::{JsonResource, Resource, ResourceArray},
         router::{Controller, Route, Router},
-        template::{render_view, HtmlResource, Template},
+        template::HtmlResource,
     },
     repositories::job_repository::JobRepository,
     view,

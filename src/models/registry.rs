@@ -7,12 +7,10 @@ use std::{
 use lazy_static::lazy_static;
 
 // Type alias for the closure used in the JobMap
-type JobClosure = Box<dyn Fn(&Registry) -> Arc<Box<dyn HashableRegistry + 'static>> + Send + Sync>;
+type JobClosure = Box<dyn Fn(&Registry) -> Box<dyn Any + Send + Sync + 'static> + Send + Sync>;
 type TypeRegistry = Arc<Mutex<HashMap<String, Arc<JobClosure>>>>;
 
-type RegistryData = Arc<Mutex<HashMap<String, Box<dyn HashableRegistry + 'static>>>>;
-
-pub trait HashableRegistry: Send + Any {}
+type RegistryData = Arc<Mutex<HashMap<String, Box<dyn Any + Send + Sync + 'static>>>>;
 
 pub struct Registry {
     map: RegistryData,
@@ -33,31 +31,38 @@ impl Registry {
         &REGISTRY
     }
 
-    pub fn set<T: HashableRegistry + 'static>(&self, key: &str, value: T) {
+    pub fn set<T: Any + Send + Sync + 'static>(&self, key: &str, value: T) {
         let mut map = self.map.lock().unwrap();
         map.insert(key.to_string(), Box::new(value));
     }
 
-    pub fn get<T: HashableRegistry, U>(&self, key: &str, func: Box<dyn Fn(Option<&T>) -> U>) -> U {
-        let map_clone = Arc::clone(&self.map);
-        let map = map_clone.lock().unwrap();
-
-        let f = downcast_ref::<T>(map.get(key).unwrap());
-
-        return func(f.clone());
-    }
-
-    pub fn get_type<T: HashableRegistry>(&self) -> Option<T>
+    pub fn get<T: Any + Send + Sync>(&self, key: &str) -> Option<T>
     where
         T: Clone,
     {
-        let s = type_name::<T>().to_owned();
-        let map = self.type_map.lock().unwrap();
-        let func = map.get(&s).unwrap();
-        let value = func(self);
-        let val = value.clone();
+        let map_clone = Arc::clone(&self.map);
+        let map = map_clone.lock().unwrap();
 
-        return downcast_ref::<T>(&val).cloned();
+        return downcast_ref::<T>(map.get(key).unwrap()).cloned();
+    }
+
+    pub fn get_type<T>(&self) -> Arc<Box<T>>
+    where
+        T: Clone + Any + Send + Sync,
+    {
+        let value = {
+            let s = type_name::<T>().to_owned();
+            let map = self.type_map.lock().unwrap();
+            let func = map.get(&s).unwrap().clone();
+
+            drop(map); // to unlock lock
+
+            func(self)
+        };
+
+        let typed_value = value.downcast::<T>().unwrap();
+
+        Arc::new(typed_value)
     }
 
     pub fn register<J>(&self, func: JobClosure) {
