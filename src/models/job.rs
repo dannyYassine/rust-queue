@@ -1,11 +1,30 @@
+use std::any::type_name_of_val;
+
 use serde::Serialize;
 
+use crate::repositories::job_repository::JobRepository;
+
+pub trait Dispatchable: Serialize {
+    #[allow(async_fn_in_trait)]
+    async fn dispatch(&self) {
+        let job_repository = JobRepository::new();
+
+        let s = type_name_of_val(self).to_string();
+        let word = s.split("::").last().unwrap_or_default();
+
+        let job: Job = Job::new(
+            "".to_string(),
+            "pending".to_string(),
+            word.to_string(),
+            serde_json::to_string(self).unwrap(),
+        );
+
+        job_repository.add_job(&job).await;
+    }
+}
 // Trait for the method `handle`
 pub trait JobHandle: 'static {
     fn handle(&self);
-    // fn dispatch(&self) {
-    //     dispatch!(self);
-    // }
 }
 
 #[derive(Debug, Clone, sqlx::FromRow, Serialize)]

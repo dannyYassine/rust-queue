@@ -1,6 +1,9 @@
 use std::thread;
 
-use rust_queue::{dispatch, models::application::Application};
+use rust_queue::{
+    dispatch,
+    models::{application::Application, job::Dispatchable},
+};
 use serde::{Deserialize, Serialize};
 use tokio::runtime::Runtime;
 
@@ -13,6 +16,7 @@ struct PrintToConsoleJob {
 struct MultipleValueJob {
     value: i32,
 }
+impl Dispatchable for MultipleValueJob {}
 
 #[tokio::main]
 async fn main() {
@@ -21,24 +25,24 @@ async fn main() {
     let mut handles = vec![];
 
     for i in 0..5 {
-        println!("Dispatch first job {}", i);
-        let rt = Runtime::new().unwrap();
-        let handle = thread::spawn(move || {
-            rt.block_on(async {
-                run_job_1().await;
-                println!("Dispatch first job {} finished", i);
-            });
-        });
-        handles.push(handle);
-    }
-
-    for i in 0..5 {
         println!("Dispatch second job {}", i);
         let rt = Runtime::new().unwrap();
         let handle = thread::spawn(move || {
             rt.block_on(async {
                 run_job_2().await;
                 println!("Dispatch second job {} finished", i);
+            });
+        });
+        handles.push(handle);
+    }
+
+    for i in 0..5 {
+        println!("Dispatch first job {}", i);
+        let rt = Runtime::new().unwrap();
+        let handle = thread::spawn(move || {
+            rt.block_on(async {
+                run_job_1().await;
+                println!("Dispatch first job {} finished", i);
             });
         });
         handles.push(handle);
@@ -57,6 +61,5 @@ async fn run_job_1() {
 }
 
 async fn run_job_2() {
-    let job = MultipleValueJob { value: 2 };
-    dispatch!(job);
+    MultipleValueJob { value: 2 }.dispatch().await;
 }
