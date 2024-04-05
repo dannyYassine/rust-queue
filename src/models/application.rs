@@ -3,19 +3,22 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use axum::{routing::MethodRouter, Router};
+use axum::{routing::MethodRouter, Router as AxumRouter};
 use dotenvy::dotenv;
 use lazy_static::lazy_static;
 
 use super::{
-    app_state::AppStateManager, data_connection::DatabaseConnection, router::Router as CrateRouter,
+    app_state::AppStateManager,
+    data_connection::DatabaseConnection,
+    router::{Router, RouterRegister},
     service_providers::ServiceProvider,
 };
 
 #[derive(Clone)]
 pub struct Application {
     service_providers: Arc<Mutex<Vec<Box<dyn ServiceProvider>>>>,
-    router: Arc<Mutex<Router>>,
+    router: Arc<Mutex<AxumRouter>>,
+    routers: Arc<Mutex<Vec<Router>>>,
     grouped_route_path: Arc<Mutex<String>>,
 }
 
@@ -23,7 +26,8 @@ impl Application {
     pub fn new() -> Self {
         Application {
             service_providers: Arc::new(Mutex::new(vec![])),
-            router: Arc::new(Mutex::new(Router::new())),
+            router: Arc::new(Mutex::new(AxumRouter::new())),
+            routers: Arc::new(Mutex::new(vec![])),
             grouped_route_path: Arc::new(Mutex::new(String::new())),
         }
     }
@@ -71,6 +75,14 @@ impl Application {
         let mut router = self.grouped_route_path.lock().unwrap();
         *router = String::from("");
     }
+    pub fn add_router(&self, router: Router) -> &Self {
+        {
+            let mut routers = self.routers.lock().unwrap();
+            routers.push(router);
+        }
+
+        return self;
+    }
     pub fn add_route(&self, path: &str, method_router: MethodRouter) -> &Self {
         let grouped_route_path = self.grouped_route_path.lock().unwrap();
         let new_path = format!("{}{}", grouped_route_path, path);
@@ -79,7 +91,18 @@ impl Application {
 
         return self;
     }
+    fn add_routes_to_router(&self) {
+        for router in self.routers.lock().unwrap().iter() {
+            let grouped_route_path = self.grouped_route_path.lock().unwrap();
+            let new_path = format!("{}{}", grouped_route_path, router.path);
+            let mut axum_router = self.router.lock().unwrap();
+            *axum_router = axum_router
+                .clone()
+                .route(&new_path, router.method.to_owned());
+        }
+    }
     pub async fn serve(&self) {
+        self.add_routes_to_router();
         let host: String = env::var("HTTP_SERVER_HOST").unwrap();
         let port: String = env::var("HTTP_SERVER_PORT").unwrap();
 
@@ -92,7 +115,7 @@ impl Application {
     }
     pub async fn register_routes<R>(&self) -> &Self
     where
-        R: CrateRouter,
+        R: RouterRegister,
     {
         R::register_routes();
 

@@ -33,8 +33,10 @@ impl JobRepository {
         .await;
     }
     pub async fn add_job(&self, job: &Job) {
-        let state = AppStateManager::get_instance().get_state();
-        let connection = state.connection.as_ref().unwrap();
+        let connection = {
+            let state = AppStateManager::get_instance().get_state();
+            state.connection.as_ref().unwrap().clone()
+        };
 
         let _ = sqlx::query(
             format!(
@@ -46,7 +48,7 @@ impl JobRepository {
             )
             .as_str(),
         )
-        .execute(connection)
+        .execute(&connection)
         .await;
     }
     pub async fn get_first_pending_job(&self) -> Option<(Job, Transaction<'_, Postgres>)> {

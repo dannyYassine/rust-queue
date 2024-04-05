@@ -10,7 +10,7 @@ use rust_queue::{
         job::{Job, JobStatus},
         request::Request,
         resource::{JsonResource, Resource, ResourceArray},
-        router::{Controller, Route, Router},
+        router::{Controller, Route, RouterRegister},
         template::HtmlResource,
     },
     repositories::job_repository::JobRepository,
@@ -175,7 +175,7 @@ impl Controller for RenderHtmlController {
 }
 
 struct ApiRouter;
-impl Router for ApiRouter {
+impl RouterRegister for ApiRouter {
     fn register_routes() {
         Route::post::<RootController>("/");
         Route::get::<GetJobsController>("/jobs");

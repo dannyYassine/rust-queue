@@ -2,8 +2,9 @@ use async_trait::async_trait;
 use axum::{
     body::Body,
     extract::Request as AxumRequest,
-    response::IntoResponse,
-    routing::{delete, get, head, options, patch, post, put, trace},
+    middleware::Next,
+    response::{IntoResponse, Response},
+    routing::{delete, get, head, options, patch, post, put, trace, MethodRouter},
 };
 use std::{future::Future, pin::Pin};
 
@@ -16,8 +17,37 @@ pub trait Controller: Default + Send {
     async fn execute(&self, request: Request) -> Self::ReturnType;
 }
 
-pub trait Router {
+#[async_trait]
+
+pub trait Middleware: Send {
+    async fn execute(&self, request: AxumRequest, next: Next) -> Response;
+}
+
+pub trait RouterRegister {
     fn register_routes();
+}
+
+pub struct Router {
+    pub path: String,
+    pub method: MethodRouter,
+    pub middleware: Option<Box<dyn Middleware>>,
+}
+
+impl Router {
+    pub fn new(path: String, method_router: MethodRouter) -> Self {
+        Router {
+            path: path,
+            middleware: None,
+            method: method_router,
+        }
+    }
+
+    pub fn set_middleware<M>(&mut self)
+    where
+        M: Middleware + Default + 'static,
+    {
+        self.middleware = Some(Box::new(M::default()));
+    }
 }
 
 pub struct Route;
@@ -26,50 +56,58 @@ impl Route {
     where
         C: Controller + 'static,
     {
-        Application::shared().add_route(path, get(execute::<C>));
+        let router: Router = Router::new(path.to_owned(), get(execute::<C>));
+        Application::shared().add_router(router);
     }
 
     pub fn post<C>(path: &str)
     where
         C: Controller + 'static,
     {
-        Application::shared().add_route(path, post(execute::<C>));
+        let router: Router = Router::new(path.to_owned(), post(execute::<C>));
+        Application::shared().add_router(router);
     }
     pub fn put<C>(path: &str)
     where
         C: Controller + 'static,
     {
-        Application::shared().add_route(path, put(execute::<C>));
+        let router: Router = Router::new(path.to_owned(), put(execute::<C>));
+        Application::shared().add_router(router);
     }
     pub fn options<C>(path: &str)
     where
         C: Controller + 'static,
     {
-        Application::shared().add_route(path, options(execute::<C>));
+        let router: Router = Router::new(path.to_owned(), options(execute::<C>));
+        Application::shared().add_router(router);
     }
     pub fn patch<C>(path: &str)
     where
         C: Controller + 'static,
     {
-        Application::shared().add_route(path, patch(execute::<C>));
+        let router: Router = Router::new(path.to_owned(), patch(execute::<C>));
+        Application::shared().add_router(router);
     }
     pub fn head<C>(path: &str)
     where
         C: Controller + 'static,
     {
-        Application::shared().add_route(path, head(execute::<C>));
+        let router: Router = Router::new(path.to_owned(), head(execute::<C>));
+        Application::shared().add_router(router);
     }
     pub fn delete<C>(path: &str)
     where
         C: Controller + 'static,
     {
-        Application::shared().add_route(path, delete(execute::<C>));
+        let router: Router = Router::new(path.to_owned(), delete(execute::<C>));
+        Application::shared().add_router(router);
     }
     pub fn trace<C>(path: &str)
     where
         C: Controller + 'static,
     {
-        Application::shared().add_route(path, trace(execute::<C>));
+        let router: Router = Router::new(path.to_owned(), trace(execute::<C>));
+        Application::shared().add_router(router);
     }
 
     pub fn group(path: &str, func: impl Fn()) {
