@@ -1,16 +1,25 @@
 use std::{
     env,
+    future::Future,
+    pin::Pin,
     sync::{Arc, Mutex},
 };
 
-use axum::{routing::MethodRouter, Router as AxumRouter};
+use axum::{
+    body::Body,
+    extract::Request,
+    middleware::{self, Next},
+    response::Response,
+    routing::MethodRouter,
+    Router as AxumRouter,
+};
 use dotenvy::dotenv;
 use lazy_static::lazy_static;
 
 use super::{
     app_state::AppStateManager,
     data_connection::DatabaseConnection,
-    router::{Router, RouterRegister},
+    router::{Middleware, Router, RouterRegister},
     service_providers::ServiceProvider,
 };
 
@@ -96,13 +105,30 @@ impl Application {
             let grouped_route_path = self.grouped_route_path.lock().unwrap();
             let new_path = format!("{}{}", grouped_route_path, router.path);
             let mut axum_router = self.router.lock().unwrap();
+            let mut r = axum_router
+                .clone()
+                .route(&new_path, router.method.to_owned());
+
+            if let Some(middleware) = &router.middleware {
+                // let func = get_middleware(middleware);
+                // r = r.layer(middleware::from_fn(func));
+            }
+
             *axum_router = axum_router
                 .clone()
                 .route(&new_path, router.method.to_owned());
         }
     }
+    pub fn add_middleware_to_router(&self, router: &Router, middleware: Box<dyn Middleware>) {
+        let mut routers = self.routers.lock().unwrap();
+
+        if let Some(r) = routers.iter_mut().find(|r| r.path == router.path) {
+            r.middleware = Some(middleware);
+        }
+    }
     pub async fn serve(&self) {
         self.add_routes_to_router();
+
         let host: String = env::var("HTTP_SERVER_HOST").unwrap();
         let port: String = env::var("HTTP_SERVER_PORT").unwrap();
 
@@ -144,4 +170,24 @@ impl Application {
     pub fn shared() -> &'static Self {
         &APPLICATION
     }
+}
+
+async fn get_middleware(
+    middleware: &'static (dyn Middleware + 'static),
+) -> impl Fn(Request, Next) -> Pin<Box<dyn Future<Output = Response<Body>> + Send>> {
+    return move |request: Request,
+                 next: Next|
+          -> Pin<Box<dyn Future<Output = Response<Body>> + Send + 'static>> {
+        middleware.execute(request, next)
+    };
+}
+
+async fn my_middleware(request: Request, next: Next) -> Response {
+    // do something with `request`...
+
+    let response = next.run(request).await;
+
+    // do something with `response`...
+
+    response
 }

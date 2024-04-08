@@ -1,7 +1,15 @@
+use std::fmt::format;
+
 use async_trait::async_trait;
-use axum::Json;
+use axum::{
+    extract::Request as AxumRequest,
+    middleware::Next,
+    response::{Html, Response},
+    Json,
+};
 use serde::Deserialize;
 
+use askama::Template as AskamaTemplate;
 use rust_queue::{
     json,
     models::{
@@ -10,13 +18,25 @@ use rust_queue::{
         job::{Job, JobStatus},
         request::Request,
         resource::{JsonResource, Resource, ResourceArray},
-        router::{Controller, Route, RouterRegister},
-        template::HtmlResource,
+        router::{Controller, Middleware, Route, RouterRegister},
+        template::{HtmlResource, Template, TemplateView},
     },
     repositories::job_repository::JobRepository,
     view,
 };
 use serde::Serialize;
+
+#[derive(AskamaTemplate)] // this will generate the code...
+#[template(path = "index.html")] // using the template in this path, relative
+struct IndexTemplate {
+    count: u32,
+}
+impl IndexTemplate {
+    pub fn get_display_count(&self) -> String {
+        format!("Count is {}", self.count)
+    }
+}
+impl TemplateView for IndexTemplate {}
 
 #[derive(Serialize)]
 struct Data(&'static str);
@@ -158,12 +178,18 @@ impl Controller for RenderHtmlController {
             state.counter += 1;
         }
 
-        return view!(
-            "index.html",
-            RenderHtmlData {
-                count: AppStateManager::shared().get_state().counter,
-            }
-        );
+        let template = IndexTemplate {
+            count: AppStateManager::shared().get_state().counter,
+        };
+
+        return Html(Template::render_view(&template));
+
+        // return view!(
+        //     "index.html",
+        //     RenderHtmlData {
+        //         count: AppStateManager::shared().get_state().counter,
+        //     }
+        // );
 
         // return Html(Template::render::<RenderHtmlData>(
         //     "index.html",
@@ -171,6 +197,19 @@ impl Controller for RenderHtmlController {
         //         count: AppStateManager::shared().get_state().counter,
         //     },
         // ));
+    }
+}
+
+#[derive(Default)]
+struct HtmlMiddleware;
+
+#[async_trait]
+impl Middleware for HtmlMiddleware {
+    async fn execute(&self, request: AxumRequest, next: Next) -> Response {
+        let response = next.run(request).await;
+        println!("Middleware");
+
+        response
     }
 }
 
@@ -185,7 +224,7 @@ impl RouterRegister for ApiRouter {
         });
 
         Route::get::<GetHealthController>("/health");
-        Route::get::<RenderHtmlController>("/html");
+        Route::get::<RenderHtmlController>("/html").set_middleware::<HtmlMiddleware>();
     }
 }
 

@@ -1,7 +1,8 @@
+use askama::Template as AskamaTenplate;
 use axum::response::Html;
 use lazy_static::lazy_static;
 use serde::Serialize;
-use tera::{Context, Tera};
+use tera::{Context, Tera}; // bring trait in scope
 
 pub type HtmlResource = Html<String>;
 
@@ -20,6 +21,8 @@ lazy_static! {
     };
 }
 
+pub trait TemplateView {}
+
 pub struct Template {}
 
 impl Template {
@@ -33,6 +36,13 @@ impl Template {
         TEMPLATES
             .render(template, &Context::from_serialize(&data).unwrap())
             .unwrap()
+    }
+
+    pub fn render_view<T>(template: &T) -> String
+    where
+        T: TemplateView + AskamaTenplate,
+    {
+        template.render().unwrap()
     }
 }
 
