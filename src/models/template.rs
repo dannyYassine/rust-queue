@@ -1,3 +1,5 @@
+use std::any::{type_name, type_name_of_val};
+
 use askama::Template as AskamaTenplate;
 use axum::response::Html;
 use lazy_static::lazy_static;
@@ -21,7 +23,28 @@ lazy_static! {
     };
 }
 
-pub trait TemplateView {}
+pub trait TemplateView {
+    fn get_name(&self) -> String {
+        let mut snake_case = String::new();
+
+        let name: &str = type_name_of_val(self).split("::").last().unwrap();
+        // Iterate over each character in the input string
+        for (i, c) in name.chars().enumerate() {
+            // If it's uppercase and not the first character, add underscore
+            if c.is_uppercase() && i != 0 {
+                snake_case.push('_');
+            }
+            // Convert character to lowercase and add to result
+            snake_case.push(c.to_lowercase().next().unwrap());
+        }
+
+        for (_, c) in ".html".chars().enumerate() {
+            snake_case.push(c.to_lowercase().next().unwrap());
+        }
+
+        snake_case
+    }
+}
 
 pub struct Template {}
 
@@ -29,18 +52,24 @@ impl Template {
     pub fn shared() -> &'static Tera {
         &TEMPLATES
     }
-    pub fn render<T>(template: &str, data: T) -> String
+
+    #[cfg(feature = "tera_templates")]
+    pub fn render<T>(template: &T) -> String
     where
-        T: Serialize,
+        T: TemplateView + Serialize,
     {
-        TEMPLATES
-            .render(template, &Context::from_serialize(&data).unwrap())
-            .unwrap()
+        return TEMPLATES
+            .render(
+                template.get_name().as_str(),
+                &Context::from_serialize(&template).unwrap(),
+            )
+            .unwrap();
     }
 
-    pub fn render_view<T>(template: &T) -> String
+    #[cfg(feature = "askama_templates")]
+    pub fn render<T>(template: &T) -> String
     where
-        T: TemplateView + AskamaTenplate,
+        T: TemplateView + AskamaTenplate + Serialize,
     {
         template.render().unwrap()
     }

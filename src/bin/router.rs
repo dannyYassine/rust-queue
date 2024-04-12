@@ -26,7 +26,7 @@ use rust_queue::{
 };
 use serde::Serialize;
 
-#[derive(AskamaTemplate)] // this will generate the code...
+#[derive(AskamaTemplate, Serialize)] // this will generate the code...
 #[template(path = "index.html")] // using the template in this path, relative
 struct IndexTemplate {
     count: u32,
@@ -165,6 +165,11 @@ impl Controller for GetHealthController {
 struct RenderHtmlData {
     count: u32,
 }
+impl TemplateView for RenderHtmlData {
+    fn get_name(&self) -> String {
+        "index.html".to_owned()
+    }
+}
 
 #[derive(Default)]
 struct RenderHtmlController;
@@ -181,8 +186,14 @@ impl Controller for RenderHtmlController {
         let template = IndexTemplate {
             count: AppStateManager::shared().get_state().counter,
         };
-
-        return Html(Template::render_view(&template));
+        let template_2 = RenderHtmlData {
+            count: AppStateManager::shared().get_state().counter,
+        };
+        let index_template = IndexTemplate {
+            count: AppStateManager::shared().get_state().counter,
+        };
+        return Html(Template::render(&index_template));
+        // return Html(Template::render(&template));
 
         // return view!(
         //     "index.html",
