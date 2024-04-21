@@ -6,11 +6,7 @@ use std::{
 };
 
 use axum::{
-    body::Body,
-    extract::Request,
-    middleware::{self, Next},
-    response::Response,
-    routing::MethodRouter,
+    body::Body, extract::Request, middleware::Next, response::Response, routing::MethodRouter,
     Router as AxumRouter,
 };
 use dotenvy::dotenv;

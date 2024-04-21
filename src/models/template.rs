@@ -1,6 +1,6 @@
-use std::any::{type_name, type_name_of_val};
+use std::any::type_name_of_val;
 
-use askama::Template as AskamaTenplate;
+use askama::Template as AskamaTemplate;
 use axum::response::Html;
 use lazy_static::lazy_static;
 use serde::Serialize;
@@ -69,7 +69,7 @@ impl Template {
     #[cfg(feature = "askama_templates")]
     pub fn render<T>(template: &T) -> String
     where
-        T: TemplateView + AskamaTenplate + Serialize,
+        T: TemplateView + AskamaTemplate + Serialize,
     {
         template.render().unwrap()
     }
@@ -77,18 +77,23 @@ impl Template {
 
 #[macro_export]
 macro_rules! view {
-    ($template:expr, $data:expr) => {
-        rust_queue::models::template::render_view::<_>($template, $data)
+    ($template:expr) => {
+        rust_queue::models::template::render::<_>($template)
     };
 }
 
-pub fn render_view<T>(template: &str, data: T) -> Html<String>
+#[cfg(feature = "tera_templates")]
+pub fn render<T>(template: &T) -> Html<String>
 where
-    T: Serialize,
+    T: TemplateView + Serialize,
 {
-    return Html(
-        Template::shared()
-            .render(template, &Context::from_serialize(&data).unwrap())
-            .unwrap(),
-    );
+    return Html(Template::render(template));
+}
+
+#[cfg(feature = "askama_templates")]
+pub fn render<T>(template: &T) -> Html<String>
+where
+    T: TemplateView + AskamaTemplate + Serialize,
+{
+    return Html(Template::render(template));
 }

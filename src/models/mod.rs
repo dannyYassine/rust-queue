@@ -1,11 +1,13 @@
 pub mod app_state;
 pub mod application;
 pub mod batch_job;
+pub mod cache;
 pub mod data_connection;
 pub mod event_bus;
 pub mod event_dispatcher;
 pub mod job;
 pub mod queue;
+pub mod redis;
 pub mod registry;
 pub mod request;
 pub mod resolve;

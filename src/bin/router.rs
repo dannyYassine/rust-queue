@@ -1,12 +1,5 @@
-use std::fmt::format;
-
 use async_trait::async_trait;
-use axum::{
-    extract::Request as AxumRequest,
-    middleware::Next,
-    response::{Html, Response},
-    Json,
-};
+use axum::{extract::Request as AxumRequest, middleware::Next, response::Response, Json};
 use serde::Deserialize;
 
 use askama::Template as AskamaTemplate;
@@ -19,7 +12,7 @@ use rust_queue::{
         request::Request,
         resource::{JsonResource, Resource, ResourceArray},
         router::{Controller, Middleware, Route, RouterRegister},
-        template::{HtmlResource, Template, TemplateView},
+        template::{HtmlResource, TemplateView},
     },
     repositories::job_repository::JobRepository,
     view,
@@ -192,7 +185,8 @@ impl Controller for RenderHtmlController {
         let index_template = IndexTemplate {
             count: AppStateManager::shared().get_state().counter,
         };
-        return Html(Template::render(&index_template));
+        return view!(&index_template);
+        // return Html(Template::render(&index_template));
         // return Html(Template::render(&template));
 
         // return view!(
